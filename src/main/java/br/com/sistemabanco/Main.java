@@ -1,8 +1,9 @@
 package br.com.sistemabanco;
 
-import br.com.sistemabanco.exception.*;
-import br.com.sistemabanco.model.*;
-import br.com.sistemabanco.service.ContaService;
+import br.com.sistemabanco.domain.exception.*;
+import br.com.sistemabanco.application.ExtratoService;
+import br.com.sistemabanco.domain.model.*;
+import br.com.sistemabanco.application.ContaService;
 import br.com.sistemabanco.util.Validador;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         ContaService contaService = new ContaService();
+        ExtratoService extratoService = new ExtratoService();
 
         int opcao = 0;
         while (opcao != 8) {
@@ -124,7 +126,7 @@ public class Main {
                     cpf = Validador.normalizarCpf(scanner.nextLine());
                     try {
                         ContaBancaria conta = contaService.buscarConta(cpf);
-                        conta.calcularExtrato();
+                        System.out.print(extratoService.gerar(conta));
                     } catch (ContaNaoEncontradaException e) {
                         System.out.println(e.getMessage());
                     }

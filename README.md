@@ -10,7 +10,7 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java%2021%2B-0B0F14?style=for-the-badge&logo=openjdk&logoColor=2F81F7)
+![Java](https://img.shields.io/badge/Java%2025-0B0F14?style=for-the-badge&logo=openjdk&logoColor=2F81F7)
 ![MySQL](https://img.shields.io/badge/MySQL-0B0F14?style=for-the-badge&logo=mysql&logoColor=2F81F7)
 ![Docker](https://img.shields.io/badge/Docker-0B0F14?style=for-the-badge&logo=docker&logoColor=2F81F7)
 ![Maven](https://img.shields.io/badge/Maven-0B0F14?style=for-the-badge&logo=apachemaven&logoColor=2F81F7)
@@ -68,12 +68,13 @@ SISTEMA BANCÁRIO
 
 | Exceção | Motivo |
 | --- | --- |
-| `br.com.sistemabanco.exception.SaldoInsuficienteException` | Saldo insuficiente para realizar a operação de saque ou transferência |
-| `br.com.sistemabanco.exception.ContaNaoEncontradaException` | CPF pesquisado não corresponde a nenhuma conta registrada no banco |
-| `br.com.sistemabanco.exception.CpfInvalidoException` | CPF informado falha no algoritmo de validação de dígitos verificadores |
-| `br.com.sistemabanco.exception.EmailInvalidoException` | Endereço de e-mail não atende ao padrão da expressão regular |
-| `br.com.sistemabanco.exception.ContaComSaldoException` | Tentativa de remoção de conta mantendo saldo superior a zero |
-| `br.com.sistemabanco.exception.ServicoCepException` | Falha na comunicação HTTP ou de rede durante a consulta à API do ViaCEP |
+| `br.com.sistemabanco.domain.exception.SaldoInsuficienteException` | Saldo insuficiente para realizar a operação de saque ou transferência |
+| `br.com.sistemabanco.domain.exception.ContaNaoEncontradaException` | CPF pesquisado não corresponde a nenhuma conta registrada no banco |
+| `br.com.sistemabanco.domain.exception.CpfInvalidoException` | CPF informado falha no algoritmo de validação de dígitos verificadores |
+| `br.com.sistemabanco.domain.exception.EmailInvalidoException` | Endereço de e-mail não atende ao padrão da expressão regular |
+| `br.com.sistemabanco.domain.exception.ContaComSaldoException` | Tentativa de remoção de conta mantendo saldo superior a zero |
+| `br.com.sistemabanco.domain.exception.CpfJaCadastradoException` | Tentativa de cadastrar um CPF já existente |
+| `br.com.sistemabanco.domain.exception.ServicoCepException` | Falha na comunicação HTTP ou de rede durante a consulta à API do ViaCEP |
 
 *Todas as exceções estendem `RuntimeException` (unchecked), garantindo o isolamento da camada de apresentação sem poluir as assinaturas dos métodos com `throws`.*
 
@@ -97,47 +98,49 @@ sistema-de-banco/
 │   ├── main/
 │   │   └── java/
 │   │       └── br/com/sistemabanco/
-│   │           ├── config/
-│   │           │   └── ConexaoBanco.java
-│   │           ├── exception/
-│   │           │   ├── ContaComSaldoException.java
-│   │           │   ├── ContaNaoEncontradaException.java
-│   │           │   ├── CpfInvalidoException.java
-│   │           │   ├── EmailInvalidoException.java
-│   │           │   ├── SaldoInsuficienteException.java
-│   │           │   └── ServicoCepException.java
-│   │           ├── factory/
-│   │           │   └── ContaFactory.java
-│   │           ├── model/
-│   │           │   ├── ContaBancaria.java
-│   │           │   ├── ContaCorrente.java
-│   │           │   ├── ContaInvestimento.java
-│   │           │   ├── ContaPoupanca.java
-│   │           │   ├── Endereco.java
-│   │           │   ├── TipoConta.java
-│   │           │   ├── TipoTransacao.java
-│   │           │   └── Transacao.java
-│   │           ├── repository/
-│   │           │   ├── ContaDAO.java
-│   │           │   └── impl/
-│   │           │       └── ContaDAOImpl.java
-│   │           ├── service/
-│   │           │   ├── CepService.java
-│   │           │   ├── ContaService.java
-│   │           │   └── impl/
-│   │           │       └── CepServiceImpl.java
-│   │           ├── util/
-│   │           │   └── Validador.java
-│   │           └── Main.java
+│           ├── Main.java
+│           ├── application/
+│           │   ├── ContaService.java
+│           │   └── ExtratoService.java
+│           ├── domain/
+│           │   ├── exception/
+│           │   │   ├── ContaComSaldoException.java
+│           │   │   ├── ContaNaoEncontradaException.java
+│           │   │   ├── CpfInvalidoException.java
+│           │   │   ├── CpfJaCadastradoException.java
+│           │   │   ├── EmailInvalidoException.java
+│           │   │   ├── SaldoInsuficienteException.java
+│           │   │   └── ServicoCepException.java
+│           │   ├── factory/
+│           │   │   └── ContaFactory.java
+│           │   ├── model/
+│           │   │   ├── ContaBancaria.java
+│           │   │   ├── ContaCorrente.java
+│           │   │   ├── ContaInvestimento.java
+│           │   │   ├── ContaPoupanca.java
+│           │   │   ├── Endereco.java
+│           │   │   ├── TipoConta.java
+│           │   │   ├── TipoTransacao.java
+│           │   │   └── Transacao.java
+│           │   ├── repository/
+│           │   │   └── ContaDAO.java
+│           │   └── service/
+│           │       └── CepService.java
+│           ├── infrastructure/
+│           │   ├── client/
+│           │   │   └── CepServiceImpl.java
+│           │   ├── config/
+│           │   │   └── ConexaoBanco.java
+│           │   └── persistence/
+│           │       └── ContaDAOImpl.java
+│           └── util/
+│               └── Validador.java
 │   └── test/
 │       └── java/
 │           └── br/com/sistemabanco/
-│               ├── model/
-│               │   └── ContaBancariaTest.java
-│               ├── service/
-│               │   └── ContaServiceTest.java
-│               └── util/
-│                   └── ValidadorTest.java
+│               ├── ContaBancariaTest.java
+│               ├── ContaServiceTest.java
+│               └── ValidadorTest.java
 ├── docker-compose.yml
 ├── .gitignore
 ├── pom.xml
@@ -154,7 +157,7 @@ sistema-de-banco/
 <pre align="center">
 [SYSTEM STATUS]
 
-Language   : JAVA 21+
+Language   : JAVA 25
 Database   : MYSQL 8.0 (DOCKER)
 Testing    : JUNIT 5 + MOCKITO
 Integration: VIACEP REST API (HTTPCLIENT)
@@ -164,5 +167,3 @@ Status     : EVOLVING
 </pre>
 
 <br>
-
-

@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS contas (
     email VARCHAR(100) NOT NULL,
     saldo DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
     tipo VARCHAR(50) NOT NULL,
-    data_abertura DATE NOT NULL DEFAULT (CURRENT_DATE)
+    data_abertura DATE NOT NULL DEFAULT (CURRENT_DATE),
+    saques_realizados INT NOT NULL DEFAULT 0,
+    data_ultimo_saque DATE NULL
     );
 
 CREATE TABLE IF NOT EXISTS enderecos (
@@ -15,6 +17,7 @@ CREATE TABLE IF NOT EXISTS enderecos (
     bairro VARCHAR(100),
     cidade VARCHAR(100),
     uf VARCHAR(2),
+    CONSTRAINT uq_enderecos_cpf_titular UNIQUE (cpf_titular),
     CONSTRAINT fk_enderecos_contas FOREIGN KEY (cpf_titular) REFERENCES contas(cpf) ON DELETE CASCADE
     );
 

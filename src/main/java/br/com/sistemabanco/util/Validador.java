@@ -4,6 +4,9 @@ import java.util.regex.Pattern;
 
 public class Validador {
     public static boolean validarNome(String nome) {
+        if (nome == null) {
+            return false;
+        }
         boolean temConteudo = !nome.trim().isEmpty();
         boolean bate = Pattern.matches("^[\\p{L}\\s]+$", nome);
 
@@ -13,7 +16,7 @@ public class Validador {
     public static boolean validarCpf(String cpf) {
         cpf = normalizarCpf(cpf);
 
-        if (cpf.length() != 11) {
+        if (cpf == null || cpf.length() != 11) {
             return false;
         }
 
@@ -69,10 +72,16 @@ public class Validador {
     }
 
     public static String normalizarCpf(String cpf) {
-        return cpf.replace(".", "").replace("-", "");
+        if (cpf == null) {
+            return null;
+        }
+        return cpf.replace(".", "").replace("-", "").replace(" ", "");
     }
 
     public static boolean validarEmail(String email){
+        if (email == null) {
+            return false;
+        }
         boolean validar = Pattern.matches("^[a-zA-Z0-9._-]+@[a-zA-Z]+\\.[a-zA-Z]+$", email);
 
         return validar;

@@ -1,7 +1,7 @@
 package br.com.sistemabanco;
 
-import br.com.sistemabanco.model.ContaCorrente;
-import br.com.sistemabanco.model.Endereco;
+import br.com.sistemabanco.domain.model.ContaCorrente;
+import br.com.sistemabanco.domain.model.Endereco;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
