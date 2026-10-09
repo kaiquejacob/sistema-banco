@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,7 @@ public class CepServiceImpl implements CepService {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(String.format(VIA_CEP_URL, cepLimpo)))
+                    .timeout(Duration.ofSeconds(5))
                     .GET()
                     .build();
 

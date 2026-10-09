@@ -8,8 +8,6 @@ import br.com.sistemabanco.domain.factory.ContaFactory;
 import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
-import br.com.sistemabanco.infrastructure.persistence.ContaDAOImpl;
-import br.com.sistemabanco.infrastructure.client.CepServiceImpl;
 import br.com.sistemabanco.util.Validador;
 
 import java.math.BigDecimal;
@@ -22,12 +20,10 @@ public class ContaService {
     private final ContaDAO contaDAO;
     private final CepService cepService;
 
-    public ContaService() {
-        this.contaDAO = new ContaDAOImpl();
-        this.cepService = new CepServiceImpl();
-    }
-
     public ContaService(ContaDAO contaDAO, CepService cepService) {
+        if (contaDAO == null || cepService == null) {
+            throw new IllegalArgumentException("As dependências do serviço não podem ser nulas.");
+        }
         this.contaDAO = contaDAO;
         this.cepService = cepService;
     }
@@ -55,8 +51,19 @@ public class ContaService {
         ContaBancaria conta = buscarConta(cpf);
         BigDecimal saldoAnterior = conta.getSaldo();
         conta.sacar(valor);
-        Transacao transacao = new Transacao(TipoTransacao.SAQUE, valor);
+        Transacao transacao = new Transacao(TipoTransacao.SAQUE, saldoAnterior.subtract(conta.getSaldo()));
         persistirMovimentacao(conta, transacao, saldoAnterior);
+    }
+
+    public void cobrarTaxaManutencao(String cpf) {
+        ContaBancaria conta = buscarConta(cpf);
+        BigDecimal saldoAnterior = conta.getSaldo();
+        BigDecimal taxa = conta.getTipoConta().calcularTaxaManutencao();
+        if (taxa.signum() == 0) {
+            return;
+        }
+        conta.debitarTarifa(taxa, TipoTransacao.TAXA_MANUTENCAO);
+        persistirMovimentacao(conta, new Transacao(TipoTransacao.TAXA_MANUTENCAO, taxa), saldoAnterior);
     }
 
     public void transferir(String cpfOrigem, String cpfDestino, BigDecimal valor) {
@@ -69,14 +76,10 @@ public class ContaService {
 
         BigDecimal saldoOrigemAnterior = origem.getSaldo();
         BigDecimal saldoDestinoAnterior = destino.getSaldo();
-        origem.sacar(valor, TipoTransacao.TRANSFERENCIA_ENVIADA);
+        origem.debitarTransferencia(valor);
         destino.depositar(valor, TipoTransacao.TRANSFERENCIA_RECEBIDA);
 
-        if (contaDAO.suportaTransacoesAtomicas()) {
-            contaDAO.transferirComTransacao(origem, destino, valor, saldoOrigemAnterior, saldoDestinoAnterior);
-        } else {
-            contaDAO.transferirComTransacao(origem, destino, valor);
-        }
+        contaDAO.transferirComTransacao(origem, destino, valor, saldoOrigemAnterior, saldoDestinoAnterior);
     }
 
     public void removerConta(String cpf) {
@@ -104,12 +107,7 @@ public class ContaService {
          * O DAO JDBC garante atomicidade de saldo e histórico. O caminho
          * legado é mantido para DAOs de teste e implementações externas.
          */
-        if (contaDAO.suportaTransacoesAtomicas()) {
-            contaDAO.movimentarComTransacao(conta, transacao, saldoAnterior);
-        } else {
-            contaDAO.atualizarSaldoESaques(conta);
-            contaDAO.registrarTransacao(conta.getCpf(), transacao);
-        }
+        contaDAO.movimentarComTransacao(conta, transacao, saldoAnterior);
     }
 
     private String validarCpf(String cpf) {

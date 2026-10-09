@@ -56,6 +56,8 @@ class ContaServiceTest {
         verify(contaDAO, times(1)).transferirComTransacao(
                 any(ContaBancaria.class),
                 any(ContaBancaria.class),
+                any(BigDecimal.class),
+                any(BigDecimal.class),
                 any(BigDecimal.class)
         );
     }
@@ -99,8 +101,8 @@ class ContaServiceTest {
         contaService.depositar("12345678909", new BigDecimal("300.00"));
 
         assertEquals(0, new BigDecimal("1300.00").compareTo(contaOrigem.getSaldo()));
-        verify(contaDAO, times(1)).atualizarSaldoESaques(contaOrigem);
-        verify(contaDAO, times(1)).registrarTransacao(eq("12345678909"), any());
+        verify(contaDAO, times(1)).movimentarComTransacao(
+                eq(contaOrigem), any(), eq(new BigDecimal("1000.00")));
     }
 
     @Test
@@ -110,8 +112,8 @@ class ContaServiceTest {
         contaService.sacar("12345678909", new BigDecimal("200.00"));
 
         assertEquals(0, new BigDecimal("800.00").compareTo(contaOrigem.getSaldo()));
-        verify(contaDAO, times(1)).atualizarSaldoESaques(contaOrigem);
-        verify(contaDAO, times(1)).registrarTransacao(eq("12345678909"), any());
+        verify(contaDAO, times(1)).movimentarComTransacao(
+                eq(contaOrigem), any(), eq(new BigDecimal("1000.00")));
     }
 
     @Test

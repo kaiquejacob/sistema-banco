@@ -9,11 +9,13 @@ import br.com.sistemabanco.util.Validador;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
+import br.com.sistemabanco.infrastructure.client.CepServiceImpl;
+import br.com.sistemabanco.infrastructure.persistence.ContaDAOImpl;
 
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        ContaService contaService = new ContaService();
+        ContaService contaService = new ContaService(new ContaDAOImpl(), new CepServiceImpl());
         ExtratoService extratoService = new ExtratoService();
 
         int opcao = 0;

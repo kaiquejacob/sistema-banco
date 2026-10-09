@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ContaBancariaTest {
 
@@ -32,5 +33,26 @@ class ContaBancariaTest {
         conta.sacar(new BigDecimal("40.00"));
 
         assertEquals(0, new BigDecimal("60.00").compareTo(conta.getSaldo()));
+    }
+
+    @Test
+    void deveRespeitarLimiteDiarioDaModalidade() {
+        ContaCorrente conta = new ContaCorrente("Cliente Teste", new BigDecimal("3000.00"),
+                "12345678909", "teste@email.com", endereco);
+
+        conta.sacar(new BigDecimal("2000.00"));
+
+        assertThrows(RuntimeException.class, () -> conta.sacar(new BigDecimal("1.00")));
+    }
+
+    @Test
+    void transferenciaNaoDeveConsumirFranquiaDeSaque() {
+        ContaCorrente conta = new ContaCorrente("Cliente Teste", new BigDecimal("1000.00"),
+                "12345678909", "teste@email.com", endereco);
+
+        conta.debitarTransferencia(new BigDecimal("100.00"));
+
+        assertEquals(0, conta.getSaquesRealizados());
+        assertEquals(0, new BigDecimal("900.00").compareTo(conta.getSaldo()));
     }
 }

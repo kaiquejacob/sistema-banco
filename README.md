@@ -32,7 +32,7 @@ Projeto utilizado como aplicação prática evolutiva dos conhecimentos da **Mar
 SISTEMA BANCÁRIO
 
 [✓] Arquitetura em Camadas (Application, Domain, Infrastructure, Util)
-[✓] Polimorfismo em Enums (TipoConta com métodos abstratos para regras por modalidade)
+[✓] Polimorfismo em Enums (taxas de manutenção e limites diários por modalidade)
 [✓] Pattern Data Access Object (DAO) para isolamento total da camada de persistência
 [✓] Gestão estrita de recursos JDBC (try-with-resources prevenindo vazamento de conexões)
 [✓] Programação Funcional com Optional<T> para eliminação de retornos nulos
@@ -84,7 +84,8 @@ SISTEMA BANCÁRIO
 
 * **Banco de Dados Relacional**: Persistência realizada em **MySQL 8.0** gerenciado via **Docker Compose**.
 * **Camada JDBC**: Acesso aos dados implementado manualmente através de `PreparedStatement` e `ResultSet`.
-* **Prevenção de Leaks**: Todos os recursos de banco (`Connection`, `PreparedStatement`, `ResultSet`) utilizam o bloco **try-with-resources**, garantindo o encerramento das conexões.
+* **Pool de conexões**: O acesso usa HikariCP, com limites de conexão e timeout configurados.
+* **Prevenção de Leaks**: Todos os recursos de banco (`Connection`, `PreparedStatement`, `ResultSet`) utilizam o bloco **try-with-resources**, devolvendo conexões ao pool.
 * **Consultas Seguras**: Utilização do tipo `Optional<ContaBancaria>` na interface `ContaDAO`, forçando o tratamento funcional na camada de serviço via `.orElseThrow()`.
 * **Integração com API REST**: A classe `CepServiceImpl` consome a API do **ViaCEP** através do `HttpClient` nativo do Java.
 
@@ -173,12 +174,12 @@ sistema-de-banco/
 └── README.md
 ```
 
-* `application`: casos de uso e orquestração das operações bancárias.
+* `application`: casos de uso e orquestração das operações bancárias. O serviço recebe suas dependências por construtor.
 * `domain`: modelos, regras, exceções, contratos de repositório e Factory.
 * `infrastructure`: implementação JDBC, conexão com MySQL e cliente ViaCEP.
 * `util`: validações reutilizáveis.
 
-Essa separação mantém o domínio independente do console e da implementação JDBC, preparando a futura migração para Spring Boot, Spring Data JPA e uma API REST.
+Essa separação mantém o domínio independente do console e da implementação JDBC, preparando a futura migração para Spring Boot, Spring Data JPA e uma API REST. Transferências não são tratadas como saques: não consomem a franquia nem cobram tarifa de saque. O histórico de transações impede a exclusão física de uma conta enquanto houver lançamentos associados.
 
 ---
 

@@ -4,6 +4,7 @@ public enum TipoTransacao {
     ABERTURA_CONTA("Saldo Inicial"),
     DEPOSITO("Depósito"),
     SAQUE("Saque"),
+    TAXA_MANUTENCAO("Taxa de manutenção"),
     TRANSFERENCIA_ENVIADA("Transf. Enviada"),
     TRANSFERENCIA_RECEBIDA("Transf. Recebida");
 

@@ -2,6 +2,7 @@ package br.com.sistemabanco.infrastructure.persistence;
 
 import br.com.sistemabanco.infrastructure.config.ConexaoBanco;
 import br.com.sistemabanco.domain.exception.CpfJaCadastradoException;
+import br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException;
 import br.com.sistemabanco.domain.exception.CpfInvalidoException;
 import br.com.sistemabanco.domain.exception.EmailInvalidoException;
 import br.com.sistemabanco.domain.factory.ContaFactory;
@@ -17,11 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class ContaDAOImpl implements ContaDAO {
-
-    @Override
-    public boolean suportaTransacoesAtomicas() {
-        return true;
-    }
 
     @Override
     public Optional<ContaBancaria> buscarPorCpf(String cpf) {
@@ -176,7 +172,7 @@ public class ContaDAOImpl implements ContaDAO {
             String sqlSaldo = "UPDATE contas SET saldo = ?, saques_realizados = ?, data_ultimo_saque = ? WHERE cpf = ?";
             if (saldoAnterior != null) {
                 sqlSaldo = "UPDATE contas SET saldo = ?, saques_realizados = ?, data_ultimo_saque = ?"
-                        + " WHERE cpf = ? AND saldo = ?";
+                        + " WHERE cpf = ? AND saldo = ? AND saques_realizados = ?";
             }
             String sqlTransacao = "INSERT INTO transacoes (cpf_titular, tipo, valor, data_hora) VALUES (?, ?, ?, ?)";
 
@@ -194,9 +190,10 @@ public class ContaDAOImpl implements ContaDAO {
                     saldo.setString(4, conta.getCpf());
                     if (saldoAnterior != null) {
                         saldo.setBigDecimal(5, saldoAnterior);
+                        saldo.setInt(6, saquesAntesDaOperacao(conta, transacao));
                     }
                     if (saldo.executeUpdate() != 1) {
-                        throw new SQLException("Conta não encontrada ao atualizar o saldo.");
+                        throw new ConflitoConcorrenciaException("A conta foi alterada por outra operação.");
                     }
 
                     historico.setString(1, conta.getCpf());
@@ -205,12 +202,17 @@ public class ContaDAOImpl implements ContaDAO {
                     historico.setTimestamp(4, Timestamp.valueOf(transacao.getDataHora()));
                     historico.executeUpdate();
                     conn.commit();
+                } catch (ConflitoConcorrenciaException e) {
+                    conn.rollback();
+                    throw e;
                 } catch (SQLException e) {
                     conn.rollback();
                     throw new RuntimeException("Erro na transação. Rollback executado.", e);
                 } finally {
                     conn.setAutoCommit(true);
                 }
+            } catch (ConflitoConcorrenciaException e) {
+                throw e;
             } catch (SQLException e) {
                 throw new RuntimeException("Erro de conexão durante a movimentação", e);
         }
@@ -244,7 +246,7 @@ public class ContaDAOImpl implements ContaDAO {
                                        BigDecimal saldoOrigemAnterior, BigDecimal saldoDestinoAnterior) {
         String sqlUpdate = "UPDATE contas SET saldo = ?, saques_realizados = ?, data_ultimo_saque = ? WHERE cpf = ?";
         String sqlUpdateComVerificacao = "UPDATE contas SET saldo = ?, saques_realizados = ?, data_ultimo_saque = ?"
-                + " WHERE cpf = ? AND saldo = ?";
+                + " WHERE cpf = ? AND saldo = ? AND saques_realizados = ?";
         String sqlTransacao = "INSERT INTO transacoes (cpf_titular, tipo, valor, data_hora) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = ConexaoBanco.getConnection()) {
@@ -261,9 +263,10 @@ public class ContaDAOImpl implements ContaDAO {
                 stmtOrigem.setString(4, origem.getCpf());
                 if (saldoOrigemAnterior != null) {
                     stmtOrigem.setBigDecimal(5, saldoOrigemAnterior);
+                    stmtOrigem.setInt(6, origem.getQuantidadeSaques());
                 }
                 if (stmtOrigem.executeUpdate() != 1) {
-                    throw new SQLException("Saldo da conta de origem foi alterado por outra operação.");
+                    throw new ConflitoConcorrenciaException("Saldo da conta de origem foi alterado por outra operação.");
                 }
 
                 stmtDestino.setBigDecimal(1, destino.getSaldo());
@@ -271,9 +274,10 @@ public class ContaDAOImpl implements ContaDAO {
                 stmtDestino.setString(4, destino.getCpf());
                 if (saldoDestinoAnterior != null) {
                     stmtDestino.setBigDecimal(5, saldoDestinoAnterior);
+                    stmtDestino.setInt(6, destino.getQuantidadeSaques());
                 }
                 if (stmtDestino.executeUpdate() != 1) {
-                    throw new SQLException("Saldo da conta de destino foi alterado por outra operação.");
+                    throw new ConflitoConcorrenciaException("Saldo da conta de destino foi alterado por outra operação.");
                 }
 
                 stmtTransacao.setString(1, origem.getCpf());
@@ -290,12 +294,17 @@ public class ContaDAOImpl implements ContaDAO {
                 stmtTransacao.executeUpdate();
 
                 conn.commit();
+            } catch (ConflitoConcorrenciaException e) {
+                conn.rollback();
+                throw e;
             } catch (SQLException e) {
                 conn.rollback();
                 throw new RuntimeException("Erro na transação. Rollback executado.", e);
             } finally {
                 conn.setAutoCommit(true);
             }
+        } catch (ConflitoConcorrenciaException e) {
+            throw e;
         } catch (SQLException e) {
             throw new RuntimeException("Erro de conexão durante a transferência", e);
         }
@@ -308,6 +317,13 @@ public class ContaDAOImpl implements ContaDAO {
         } else {
             stmt.setNull(indice + 1, Types.DATE);
         }
+    }
+
+    private int saquesAntesDaOperacao(ContaBancaria conta, Transacao transacao) {
+        if (transacao.getTipo() == TipoTransacao.SAQUE && conta instanceof ContaCorrente) {
+            return Math.max(0, conta.getQuantidadeSaques() - 1);
+        }
+        return conta.getQuantidadeSaques();
     }
 
     @Override

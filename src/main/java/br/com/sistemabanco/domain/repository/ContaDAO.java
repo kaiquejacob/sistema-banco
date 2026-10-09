@@ -8,10 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ContaDAO {
-    default boolean suportaTransacoesAtomicas() {
-        return false;
-    }
-
     void salvar(ContaBancaria conta);
     void atualizarSaldoESaques(ContaBancaria conta);
     void registrarTransacao(String cpf, Transacao transacao);

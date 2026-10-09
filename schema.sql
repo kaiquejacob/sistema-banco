@@ -27,5 +27,5 @@ CREATE TABLE IF NOT EXISTS transacoes (
     tipo VARCHAR(30) NOT NULL,
     valor DECIMAL(15, 2) NOT NULL,
     data_hora DATETIME NOT NULL,
-    CONSTRAINT fk_transacoes_contas FOREIGN KEY (cpf_titular) REFERENCES contas(cpf) ON DELETE CASCADE
+    CONSTRAINT fk_transacoes_contas FOREIGN KEY (cpf_titular) REFERENCES contas(cpf) ON DELETE RESTRICT
     );

@@ -20,6 +20,8 @@ public class ContaBancaria {
     private LocalDate dataAbertura;
     protected List<Transacao> historico = new ArrayList<>();
     private Endereco endereco;
+    private BigDecimal valorSaquesHoje = BigDecimal.ZERO;
+    private LocalDate dataControleSaques = LocalDate.now();
 
     public ContaBancaria(String cpf, String titular, BigDecimal saldo, TipoConta tipoConta, String email, Endereco endereco) {
         this(titular, saldo, tipoConta, cpf, email, LocalDate.now(), endereco);
@@ -76,8 +78,35 @@ public class ContaBancaria {
 
 
     public void sacar(BigDecimal valor, TipoTransacao tipo) throws SaldoInsuficienteException {
+        validarValor(valor, "saque");
+        debitar(valor, tipo);
+    }
+
+    /**
+     * Debita uma transferência sem aplicar regras específicas de saque.
+     * Transferência não é saque e, portanto, não consome a franquia nem cobra taxa.
+     */
+    public void debitarTransferencia(BigDecimal valor) {
+        validarValor(valor, "transferência");
+        if (saldo.compareTo(valor) < 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$" + saldo + ", valor solicitado: R$" + valor);
+        }
+        saldo = saldo.subtract(valor);
+        historico.add(new Transacao(TipoTransacao.TRANSFERENCIA_ENVIADA, valor));
+    }
+
+    public void debitarTarifa(BigDecimal valor, TipoTransacao tipo) {
+        validarValor(valor, "tarifa");
+        if (saldo.compareTo(valor) < 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente para cobrança da tarifa.");
+        }
+        saldo = saldo.subtract(valor);
+        historico.add(new Transacao(tipo, valor));
+    }
+
+    protected void debitar(BigDecimal valor, TipoTransacao tipo) throws SaldoInsuficienteException {
         if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor do saque deve ser positivo.");
+            throw new IllegalArgumentException("O valor deve ser positivo.");
         }
         if (tipo == null) {
             throw new IllegalArgumentException("Tipo de transação não pode ser nulo.");
@@ -85,8 +114,27 @@ public class ContaBancaria {
         if (saldo.compareTo(valor) < 0) {
             throw new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$" + saldo + ", valor solicitado: R$" + valor);
         }
+        registrarSaque(valor);
         this.saldo = this.saldo.subtract(valor);
         this.historico.add(new Transacao(tipo, valor));
+    }
+
+    private void registrarSaque(BigDecimal valor) {
+        if (!LocalDate.now().equals(dataControleSaques)) {
+            valorSaquesHoje = BigDecimal.ZERO;
+            dataControleSaques = LocalDate.now();
+        }
+        BigDecimal limite = tipoConta.obterLimiteSaqueDiario();
+        if (valorSaquesHoje.add(valor).compareTo(limite) > 0) {
+            throw new SaldoInsuficienteException("Limite diário de saque excedido. Limite: R$" + limite);
+        }
+        valorSaquesHoje = valorSaquesHoje.add(valor);
+    }
+
+    private void validarValor(BigDecimal valor, String operacao) {
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor do " + operacao + " deve ser positivo.");
+        }
     }
 
     @Override
@@ -147,5 +195,13 @@ public class ContaBancaria {
 
     public int getQuantidadeSaques() {
         return 0;
+    }
+
+    public BigDecimal getValorSaquesHoje() {
+        if (!LocalDate.now().equals(dataControleSaques)) {
+            valorSaquesHoje = BigDecimal.ZERO;
+            dataControleSaques = LocalDate.now();
+        }
+        return valorSaquesHoje;
     }
 }
