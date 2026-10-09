@@ -31,7 +31,7 @@ Projeto utilizado como aplicação prática evolutiva dos conhecimentos da **Mar
 ```text
 SISTEMA BANCÁRIO
 
-[✓] Arquitetura em Camadas (Config, Domain, Repository, Service, Exception, Util)
+[✓] Arquitetura em Camadas (Application, Domain, Infrastructure, Util)
 [✓] Polimorfismo em Enums (TipoConta com métodos abstratos para regras por modalidade)
 [✓] Pattern Data Access Object (DAO) para isolamento total da camada de persistência
 [✓] Gestão estrita de recursos JDBC (try-with-resources prevenindo vazamento de conexões)
@@ -56,7 +56,7 @@ SISTEMA BANCÁRIO
 | --- | --- |
 | 📝 Criar conta | Cadastra conta consumindo a API REST do ViaCEP para obter o endereço via HTTP |
 | 💰 Depositar | Credita saldo na conta informada e registra a transação no banco de dados |
-| 💸 Sacar | Debita saldo respeitando as taxas e limites diários específicos do `TipoConta` |
+| 💸 Sacar | Debita saldo respeitando saldo disponível e as regras de saque da conta corrente |
 | 📊 Ver extrato | Exibe dados do titular, endereço completo e histórico das transações |
 | 📋 Listar contas | Exibe todas as contas ativas ordenadas por saldo de forma decrescente |
 | ❌ Remover conta | Exclui o cadastro do banco — permitido exclusivamente para contas com saldo zerado |
@@ -86,67 +86,99 @@ SISTEMA BANCÁRIO
 * **Camada JDBC**: Acesso aos dados implementado manualmente através de `PreparedStatement` e `ResultSet`.
 * **Prevenção de Leaks**: Todos os recursos de banco (`Connection`, `PreparedStatement`, `ResultSet`) utilizam o bloco **try-with-resources**, garantindo o encerramento das conexões.
 * **Consultas Seguras**: Utilização do tipo `Optional<ContaBancaria>` na interface `ContaDAO`, forçando o tratamento funcional na camada de serviço via `.orElseThrow()`.
-* **Integração com API REST**: A classe `CepServiceImpl` consome a API do **ViaCEP** através do `HttpClient` nativo do Java, realizando a requisição GET e parse do payload JSON.
+* **Integração com API REST**: A classe `CepServiceImpl` consome a API do **ViaCEP** através do `HttpClient` nativo do Java.
+
+---
+
+## `COMO EXECUTAR`
+
+### Pré-requisitos
+
+* Java 25
+* Maven
+* Docker e Docker Compose
+
+### Banco de dados
+
+Na raiz do projeto, execute:
+
+```bash
+docker compose up -d
+```
+
+O MySQL será disponibilizado em `localhost:3307`, com o banco `banco_db` e as tabelas criadas pelo `schema.sql`.
+
+> Aguarde o container ficar pronto para conexões antes de iniciar a aplicação. A porta `3307` não pode estar sendo usada por outro container ou serviço MySQL.
+
+### Testes
+
+```bash
+mvn test
+```
+
+### Aplicação
+
+```bash
+mvn compile
+java -cp "target/classes;target/dependency/*" br.com.sistemabanco.Main
+```
+
+No Windows, caso as dependências ainda não estejam disponíveis em `target/dependency`, execute:
+
+```bash
+mvn dependency:copy-dependencies
+```
 
 ---
 
 ## `ESTRUTURA`
 
 ```text
+src/main/java/br/com/sistemabanco/
+├── Main.java
+├── application/
+│   ├── ContaService.java
+│   └── ExtratoService.java
+├── domain/
+│   ├── exception/
+│   ├── factory/
+│   ├── model/
+│   ├── repository/
+│   └── service/
+├── infrastructure/
+│   ├── client/
+│   ├── config/
+│   └── persistence/
+└── util/
+```
+
+Os principais arquivos da aplicação estão organizados da seguinte forma:
+
+```text
 sistema-de-banco/
 ├── src/
-│   ├── main/
-│   │   └── java/
-│   │       └── br/com/sistemabanco/
-│           ├── Main.java
-│           ├── application/
-│           │   ├── ContaService.java
-│           │   └── ExtratoService.java
-│           ├── domain/
-│           │   ├── exception/
-│           │   │   ├── ContaComSaldoException.java
-│           │   │   ├── ContaNaoEncontradaException.java
-│           │   │   ├── CpfInvalidoException.java
-│           │   │   ├── CpfJaCadastradoException.java
-│           │   │   ├── EmailInvalidoException.java
-│           │   │   ├── SaldoInsuficienteException.java
-│           │   │   └── ServicoCepException.java
-│           │   ├── factory/
-│           │   │   └── ContaFactory.java
-│           │   ├── model/
-│           │   │   ├── ContaBancaria.java
-│           │   │   ├── ContaCorrente.java
-│           │   │   ├── ContaInvestimento.java
-│           │   │   ├── ContaPoupanca.java
-│           │   │   ├── Endereco.java
-│           │   │   ├── TipoConta.java
-│           │   │   ├── TipoTransacao.java
-│           │   │   └── Transacao.java
-│           │   ├── repository/
-│           │   │   └── ContaDAO.java
-│           │   └── service/
-│           │       └── CepService.java
-│           ├── infrastructure/
-│           │   ├── client/
-│           │   │   └── CepServiceImpl.java
-│           │   ├── config/
-│           │   │   └── ConexaoBanco.java
-│           │   └── persistence/
-│           │       └── ContaDAOImpl.java
-│           └── util/
-│               └── Validador.java
-│   └── test/
-│       └── java/
-│           └── br/com/sistemabanco/
-│               ├── ContaBancariaTest.java
-│               ├── ContaServiceTest.java
-│               └── ValidadorTest.java
+│   ├── main/java/br/com/sistemabanco/
+│   │   ├── Main.java
+│   │   ├── application/
+│   │   ├── domain/
+│   │   ├── infrastructure/
+│   │   └── util/
+│   └── test/java/br/com/sistemabanco/
+│       ├── ContaBancariaTest.java
+│       ├── ContaServiceTest.java
+│       └── ValidadorTest.java
 ├── docker-compose.yml
-├── .gitignore
+├── schema.sql
 ├── pom.xml
 └── README.md
-
 ```
+
+* `application`: casos de uso e orquestração das operações bancárias.
+* `domain`: modelos, regras, exceções, contratos de repositório e Factory.
+* `infrastructure`: implementação JDBC, conexão com MySQL e cliente ViaCEP.
+* `util`: validações reutilizáveis.
+
+Essa separação mantém o domínio independente do console e da implementação JDBC, preparando a futura migração para Spring Boot, Spring Data JPA e uma API REST.
 
 ---
 
