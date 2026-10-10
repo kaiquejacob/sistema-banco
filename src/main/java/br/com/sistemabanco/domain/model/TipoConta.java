@@ -37,10 +37,14 @@ public enum TipoConta {
         }
     };
 
-    public final String nome;
+    private final String nome;
 
     TipoConta(String nome) {
         this.nome = nome;
+    }
+
+    public String getNome() {
+        return nome;
     }
 
     public abstract BigDecimal calcularTaxaManutencao();

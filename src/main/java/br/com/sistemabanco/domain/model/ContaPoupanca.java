@@ -5,6 +5,7 @@ import br.com.sistemabanco.domain.exception.EmailInvalidoException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Locale;
 
 public class ContaPoupanca extends ContaBancaria {
 
@@ -20,5 +21,12 @@ public class ContaPoupanca extends ContaBancaria {
 
     public BigDecimal calcularRendimentoMensal() {
         return getSaldo().multiply(TAXA_RENDIMENTO);
+    }
+
+    @Override
+    public String getDetalhesExtrato() {
+        return String.format(Locale.ROOT,
+                "📈 Rendimento mensal estimado: R$%.2f\n",
+                calcularRendimentoMensal());
     }
 }

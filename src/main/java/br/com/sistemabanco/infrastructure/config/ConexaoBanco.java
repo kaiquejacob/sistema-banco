@@ -6,12 +6,16 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class ConexaoBanco {
-    private static final String URL = "jdbc:mysql://localhost:3307/banco_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String URL = System.getenv().getOrDefault("DB_URL",
+            "jdbc:mysql://localhost:3307/banco_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
 
-    private static final String USER = "root";
-    private static final String PASSWORD = "root";
+    private static final String USER = System.getenv().getOrDefault("DB_USER", "root");
+    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "root");
 
     private static final HikariDataSource DATA_SOURCE = criarDataSource();
+
+    private ConexaoBanco() {
+    }
 
     private static HikariDataSource criarDataSource() {
         HikariConfig config = new HikariConfig();
@@ -26,6 +30,12 @@ public class ConexaoBanco {
 
     public static Connection getConnection() throws SQLException {
         return DATA_SOURCE.getConnection();
+    }
+
+    public static void fechar() {
+        if (DATA_SOURCE != null && !DATA_SOURCE.isClosed()) {
+            DATA_SOURCE.close();
+        }
     }
 
 }

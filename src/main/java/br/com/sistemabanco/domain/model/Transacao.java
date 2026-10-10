@@ -36,7 +36,7 @@ public class Transacao {
 
     @Override
     public String toString() {
-        return String.format("[%s] %-20s: R$ %.2f", dataHora.format(FORMATO_DATA), tipo.descricao, valor);
+        return String.format("[%s] %-20s: R$ %.2f", dataHora.format(FORMATO_DATA), tipo.getDescricao(), valor);
     }
 
 }

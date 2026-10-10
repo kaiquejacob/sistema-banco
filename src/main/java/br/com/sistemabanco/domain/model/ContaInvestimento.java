@@ -5,6 +5,7 @@ import br.com.sistemabanco.domain.exception.EmailInvalidoException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Locale;
 
 public class ContaInvestimento extends ContaBancaria {
     private static final BigDecimal TAXA_RENDIMENTO = new BigDecimal("0.012");
@@ -24,5 +25,12 @@ public class ContaInvestimento extends ContaBancaria {
 
     public BigDecimal getTaxaAdministracao() {
         return TAXA_ADMINISTRACAO;
+    }
+
+    @Override
+    public String getDetalhesExtrato() {
+        return String.format(Locale.ROOT,
+                "📈 Rendimento mensal estimado: R$%.2f\n📉 Taxa de administração: R$%s\n",
+                calcularRendimentoMensal(), TAXA_ADMINISTRACAO);
     }
 }

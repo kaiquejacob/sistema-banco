@@ -3,12 +3,19 @@ package br.com.sistemabanco.util;
 import java.util.regex.Pattern;
 
 public class Validador {
+
+    private static final Pattern PATTERN_NOME = Pattern.compile("^[\\p{L}\\s]+$");
+    private static final Pattern PATTERN_EMAIL = Pattern.compile("^[a-zA-Z0-9._-]+@[a-zA-Z]+\\.[a-zA-Z]+$");
+
+    private Validador() {
+    }
+
     public static boolean validarNome(String nome) {
         if (nome == null) {
             return false;
         }
         boolean temConteudo = !nome.trim().isEmpty();
-        boolean bate = Pattern.matches("^[\\p{L}\\s]+$", nome);
+        boolean bate = PATTERN_NOME.matcher(nome).matches();
 
         return temConteudo && bate;
     }
@@ -20,20 +27,11 @@ public class Validador {
             return false;
         }
 
-        for (int i = 0; i < cpf.length(); i++) {
-            if (!Character.isDigit(cpf.charAt(i))) {
-                return false;
-            }
+        if (!cpf.chars().allMatch(Character::isDigit)) {
+            return false;
         }
 
-        boolean todosIguais = true;
-        for (int i = 0; i < cpf.length(); i++) {
-            if (cpf.charAt(0) != cpf.charAt(i)) {
-                todosIguais = false;
-                break;
-            }
-        }
-        if (todosIguais) {
+        if (cpf.chars().distinct().count() == 1) {
             return false;
         }
 
@@ -82,9 +80,7 @@ public class Validador {
         if (email == null) {
             return false;
         }
-        boolean validar = Pattern.matches("^[a-zA-Z0-9._-]+@[a-zA-Z]+\\.[a-zA-Z]+$", email);
-
-        return validar;
+        return PATTERN_EMAIL.matcher(email).matches();
     }
 
 }

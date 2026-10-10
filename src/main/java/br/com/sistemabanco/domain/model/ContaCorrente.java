@@ -6,6 +6,7 @@ import br.com.sistemabanco.domain.exception.SaldoInsuficienteException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Locale;
 
 public class ContaCorrente extends ContaBancaria {
     private static final BigDecimal TAXA_SAQUE = new BigDecimal("10.00");
@@ -67,6 +68,14 @@ public class ContaCorrente extends ContaBancaria {
             }
             throw e;
         }
+    }
+
+    @Override
+    public String getDetalhesExtrato() {
+        int saques = getSaquesRealizados();
+        return String.format(Locale.ROOT,
+                "🔢 Saques realizados este mês: %d (Gratuitos restantes: %d)\n",
+                saques, Math.max(0, LIMITE_SAQUES_GRATUITOS - saques));
     }
 
     public int getSaquesRealizados() {

@@ -19,12 +19,15 @@ import java.util.Optional;
 
 public class ContaDAOImpl implements ContaDAO {
 
+    private static final String SQL_SELECT_BASE = 
+            "SELECT c.titular, c.saldo, c.cpf, c.email, c.tipo, c.data_abertura,"
+            + " c.saques_realizados, c.data_ultimo_saque,"
+            + " e.cep, e.logradouro, e.bairro, e.cidade, e.uf"
+            + " FROM contas c LEFT JOIN enderecos e ON c.cpf = e.cpf_titular";
+
     @Override
     public Optional<ContaBancaria> buscarPorCpf(String cpf) {
-        String sql = "SELECT c.titular, c.saldo, c.cpf, c.email, c.tipo, c.data_abertura,"
-                + " c.saques_realizados, c.data_ultimo_saque,"
-                + " e.cep, e.logradouro, e.bairro, e.cidade, e.uf"
-                + " FROM contas c LEFT JOIN enderecos e ON c.cpf = e.cpf_titular WHERE c.cpf = ?";
+        String sql = SQL_SELECT_BASE + " WHERE c.cpf = ?";
 
         try (Connection conn = ConexaoBanco.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -49,10 +52,7 @@ public class ContaDAOImpl implements ContaDAO {
     @Override
     public List<ContaBancaria> buscarTodas() {
         List<ContaBancaria> contas = new ArrayList<>();
-        String sql = "SELECT c.titular, c.saldo, c.cpf, c.email, c.tipo, c.data_abertura,"
-                + " c.saques_realizados, c.data_ultimo_saque,"
-                + " e.cep, e.logradouro, e.bairro, e.cidade, e.uf"
-                + " FROM contas c LEFT JOIN enderecos e ON c.cpf = e.cpf_titular";
+        String sql = SQL_SELECT_BASE;
 
         try (Connection conn = ConexaoBanco.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -103,11 +103,11 @@ public class ContaDAOImpl implements ContaDAO {
                     try (PreparedStatement stmtEndereco = conn.prepareStatement(sqlEndereco)) {
                         Endereco end = conta.getEndereco();
                         stmtEndereco.setString(1, conta.getCpf());
-                        stmtEndereco.setString(2, end.getCep());
-                        stmtEndereco.setString(3, end.getLogradouro());
-                        stmtEndereco.setString(4, end.getBairro());
-                        stmtEndereco.setString(5, end.getCidade());
-                        stmtEndereco.setString(6, end.getEstado());
+                        stmtEndereco.setString(2, end.cep());
+                        stmtEndereco.setString(3, end.logradouro());
+                        stmtEndereco.setString(4, end.bairro());
+                        stmtEndereco.setString(5, end.cidade());
+                        stmtEndereco.setString(6, end.estado());
                         stmtEndereco.executeUpdate();
                     }
                 }

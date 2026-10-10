@@ -8,9 +8,13 @@ public enum TipoTransacao {
     TRANSFERENCIA_ENVIADA("Transf. Enviada"),
     TRANSFERENCIA_RECEBIDA("Transf. Recebida");
 
-    public final String descricao;
+    private final String descricao;
 
     TipoTransacao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public String getDescricao() {
+        return descricao;
     }
 }

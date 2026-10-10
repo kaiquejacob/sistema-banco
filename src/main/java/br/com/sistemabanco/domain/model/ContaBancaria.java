@@ -13,12 +13,12 @@ import java.util.List;
 
 public class ContaBancaria {
     private String titular;
-    protected BigDecimal saldo;
+    private BigDecimal saldo;
     private TipoConta tipoConta;
     private String cpf;
     private String email;
     private LocalDate dataAbertura;
-    protected List<Transacao> historico = new ArrayList<>();
+    private final List<Transacao> historico = new ArrayList<>();
     private Endereco endereco;
     private BigDecimal valorSaquesHoje = BigDecimal.ZERO;
     private LocalDate dataControleSaques = LocalDate.now();
@@ -61,9 +61,7 @@ public class ContaBancaria {
 
 
     public void depositar(BigDecimal valor, TipoTransacao tipo) {
-        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor do depósito deve ser positivo.");
-        }
+        validarValor(valor, "depósito");
         if (tipo == null) {
             throw new IllegalArgumentException("Tipo de transação não pode ser nulo.");
         }
@@ -85,35 +83,33 @@ public class ContaBancaria {
 
     public void debitarTransferencia(BigDecimal valor) {
         validarValor(valor, "transferência");
-        if (saldo.compareTo(valor) < 0) {
-            throw new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$" + saldo + ", valor solicitado: R$" + valor);
-        }
+        verificarSaldo(valor);
         saldo = saldo.subtract(valor);
         historico.add(new Transacao(TipoTransacao.TRANSFERENCIA_ENVIADA, valor));
     }
 
     public void debitarTarifa(BigDecimal valor, TipoTransacao tipo) {
         validarValor(valor, "tarifa");
-        if (saldo.compareTo(valor) < 0) {
-            throw new SaldoInsuficienteException("Saldo insuficiente para cobrança da tarifa.");
-        }
+        verificarSaldo(valor);
         saldo = saldo.subtract(valor);
         historico.add(new Transacao(tipo, valor));
     }
 
     protected void debitar(BigDecimal valor, TipoTransacao tipo) throws SaldoInsuficienteException {
-        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor deve ser positivo.");
-        }
+        validarValor(valor, "débito");
         if (tipo == null) {
             throw new IllegalArgumentException("Tipo de transação não pode ser nulo.");
         }
-        if (saldo.compareTo(valor) < 0) {
-            throw new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$" + saldo + ", valor solicitado: R$" + valor);
-        }
+        verificarSaldo(valor);
         registrarSaque(valor);
         this.saldo = this.saldo.subtract(valor);
         this.historico.add(new Transacao(tipo, valor));
+    }
+
+    private void verificarSaldo(BigDecimal valor) {
+        if (saldo.compareTo(valor) < 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$" + saldo + ", valor solicitado: R$" + valor);
+        }
     }
 
     private void registrarSaque(BigDecimal valor) {
@@ -134,10 +130,14 @@ public class ContaBancaria {
         }
     }
 
+    public String getDetalhesExtrato() {
+        return "";
+    }
+
     @Override
     public String toString() {
         return String.format("Titular: %-15s | CPF: %-11s\nEndereço: %s\nTipo: %-12s | Saldo: R$ %10.2f\n",
-                titular, cpf, (endereco != null ? endereco : "Não cadastrado"), tipoConta.nome, saldo);
+                titular, cpf, (endereco != null ? endereco : "Não cadastrado"), tipoConta.getNome(), saldo);
     }
 
     public String getTitular() {
