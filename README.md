@@ -32,19 +32,20 @@ Projeto utilizado como aplicação prática evolutiva dos conhecimentos da **Mar
 SISTEMA BANCÁRIO
 
 [✓] Arquitetura em Camadas (Application, Domain, Infrastructure, Util)
-[✓] Polimorfismo em Enums (taxas de manutenção e limites diários por modalidade)
+[✓] Polimorfismo e Design Patterns (Factory Method e substituição de instanceof em ExtratoService)
 [✓] Pattern Data Access Object (DAO) para isolamento total da camada de persistência
 [✓] Gestão estrita de recursos JDBC (try-with-resources prevenindo vazamento de conexões)
-[✓] Programação Funcional com Optional<T> para eliminação de retornos nulos
+[✓] Programação Funcional com Optional<T> e Streams API (filtragens e ordenações)
 [✓] Controle Transacional JDBC (commit, rollback e gerenciamento de auto-commit manual)
-[✓] Padrão Factory Method (ContaFactory para instanciação padronizada de entidades)
 [✓] Consumo de API REST Externa (Integração com ViaCEP via java.net.http.HttpClient)
 [✓] Exceções Customizadas Unchecked (Herança de RuntimeException isolando regras de negócio)
-[✓] Testes Unitários Automatizados (Suíte com JUnit 5 + Mockito e MockitoExtension)
+[✓] Testes Unitários Automatizados (Suíte com JUnit 5 + Mockito)
 [✓] Gestão de Build e Dependências (Apache Maven via pom.xml)
-[✓] Validações de Domínio com RegEx (Validação de CPF com dígito verificador e e-mail)
+[✓] Validações de Domínio com RegEx (Pré-compilação e validação de CPF/e-mail)
 [✓] Containerização de Infraestrutura (Docker Compose subindo instância MySQL 8.0)
-[✓] Stream API & Comparator (Ordenação dinâmica de listagens de contas)
+[✓] Clean Code, DRY & Encapsulamento (Restrição de acesso, eliminação de duplicação)
+[✓] Value Objects (Uso de Records no Java para objetos imutáveis como Endereço)
+[✓] Configuração Segura (Credenciais extraídas via Variáveis de Ambiente)
 
 ```
 
@@ -84,7 +85,7 @@ SISTEMA BANCÁRIO
 
 * **Banco de Dados Relacional**: Persistência realizada em **MySQL 8.0** gerenciado via **Docker Compose**.
 * **Camada JDBC**: Acesso aos dados implementado manualmente através de `PreparedStatement` e `ResultSet`.
-* **Pool de conexões**: O acesso usa HikariCP, com limites de conexão e timeout configurados.
+* **Pool de conexões**: O acesso usa HikariCP, com limites de conexão configurados e variáveis de ambiente (`DB_URL`, `DB_USER`, `DB_PASSWORD`) como fonte segura de credenciais.
 * **Prevenção de Leaks**: Todos os recursos de banco (`Connection`, `PreparedStatement`, `ResultSet`) utilizam o bloco **try-with-resources**, devolvendo conexões ao pool.
 * **Consultas Seguras**: Utilização do tipo `Optional<ContaBancaria>` na interface `ContaDAO`, forçando o tratamento funcional na camada de serviço via `.orElseThrow()`.
 * **Integração com API REST**: A classe `CepServiceImpl` consome a API do **ViaCEP** através do `HttpClient` nativo do Java.
