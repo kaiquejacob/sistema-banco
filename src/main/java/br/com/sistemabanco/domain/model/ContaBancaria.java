@@ -82,10 +82,7 @@ public class ContaBancaria {
         debitar(valor, tipo);
     }
 
-    /**
-     * Debita uma transferência sem aplicar regras específicas de saque.
-     * Transferência não é saque e, portanto, não consome a franquia nem cobra taxa.
-     */
+
     public void debitarTransferencia(BigDecimal valor) {
         validarValor(valor, "transferência");
         if (saldo.compareTo(valor) < 0) {
@@ -186,9 +183,7 @@ public class ContaBancaria {
         this.historico.add(transacao);
     }
 
-    /**
-     * Usado somente pela infraestrutura ao reconstruir uma conta persistida.
-     */
+
     public void limparHistorico() {
         this.historico.clear();
     }
