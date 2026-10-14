@@ -1,6 +1,5 @@
 package br.com.sistemabanco.infrastructure.persistence;
 
-import br.com.sistemabanco.infrastructure.config.ConexaoBanco;
 import br.com.sistemabanco.domain.exception.CpfJaCadastradoException;
 import br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException;
 import br.com.sistemabanco.domain.exception.CpfInvalidoException;
@@ -8,6 +7,7 @@ import br.com.sistemabanco.domain.exception.EmailInvalidoException;
 import br.com.sistemabanco.domain.factory.ContaFactory;
 import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
+import br.com.sistemabanco.infrastructure.config.ConexaoBanco;
 import br.com.sistemabanco.util.Validador;
 
 import java.math.BigDecimal;
