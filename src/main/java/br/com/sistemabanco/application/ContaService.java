@@ -10,6 +10,7 @@ import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
 import br.com.sistemabanco.util.Validador;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
@@ -40,34 +41,35 @@ public class ContaService {
         contaDAO.salvar(conta);
     }
 
+    @Transactional
     public void depositar(String cpf, BigDecimal valor) {
         ContaBancaria conta = buscarConta(cpf);
-        BigDecimal saldoAnterior = conta.getSaldo();
         conta.depositar(valor);
         Transacao transacao = new Transacao(TipoTransacao.DEPOSITO, valor);
-        persistirMovimentacao(conta, transacao, saldoAnterior);
+        persistirMovimentacao(conta, transacao);
 
     }
 
+    @Transactional
     public void sacar(String cpf, BigDecimal valor) {
         ContaBancaria conta = buscarConta(cpf);
-        BigDecimal saldoAnterior = conta.getSaldo();
         conta.sacar(valor);
-        Transacao transacao = new Transacao(TipoTransacao.SAQUE, saldoAnterior.subtract(conta.getSaldo()));
-        persistirMovimentacao(conta, transacao, saldoAnterior);
+        Transacao transacao = new Transacao(TipoTransacao.SAQUE, valor);
+        persistirMovimentacao(conta, transacao);
     }
 
+    @Transactional
     public void cobrarTaxaManutencao(String cpf) {
         ContaBancaria conta = buscarConta(cpf);
-        BigDecimal saldoAnterior = conta.getSaldo();
         BigDecimal taxa = conta.getTipoConta().calcularTaxaManutencao();
         if (taxa.signum() == 0) {
             return;
         }
         conta.debitarTarifa(taxa, TipoTransacao.TAXA_MANUTENCAO);
-        persistirMovimentacao(conta, new Transacao(TipoTransacao.TAXA_MANUTENCAO, taxa), saldoAnterior);
+        persistirMovimentacao(conta, new Transacao(TipoTransacao.TAXA_MANUTENCAO, taxa));
     }
 
+    @Transactional
     public void transferir(String cpfOrigem, String cpfDestino, BigDecimal valor) {
         ContaBancaria origem = buscarConta(cpfOrigem);
         ContaBancaria destino = buscarConta(cpfDestino);
@@ -76,14 +78,13 @@ public class ContaService {
             throw new IllegalArgumentException("A conta de origem e destino devem ser diferentes.");
         }
 
-        BigDecimal saldoOrigemAnterior = origem.getSaldo();
-        BigDecimal saldoDestinoAnterior = destino.getSaldo();
         origem.debitarTransferencia(valor);
         destino.depositar(valor, TipoTransacao.TRANSFERENCIA_RECEBIDA);
 
-        contaDAO.transferirComTransacao(origem, destino, valor, saldoOrigemAnterior, saldoDestinoAnterior);
+        contaDAO.transferirComTransacao(origem, destino, valor);
     }
 
+    @Transactional
     public void removerConta(String cpf) {
         ContaBancaria conta = buscarConta(cpf);
         if (conta.getSaldo().compareTo(BigDecimal.ZERO) > 0) {
@@ -92,24 +93,22 @@ public class ContaService {
         contaDAO.deletar(conta.getCpf());
     }
 
+    @Transactional(readOnly = true)
     public List<ContaBancaria> listarTodasOrdenadasPorSaldo() {
         return contaDAO.buscarTodas().stream()
                 .sorted(Comparator.comparing(ContaBancaria::getSaldo).reversed())
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ContaBancaria buscarConta(String cpf) {
         String cpfNormalizado = validarCpf(cpf);
         return contaDAO.buscarPorCpf(cpfNormalizado)
                 .orElseThrow(() -> new ContaNaoEncontradaException("Conta não encontrada para o CPF: " + cpfNormalizado));
     }
 
-    private void persistirMovimentacao(ContaBancaria conta, Transacao transacao, BigDecimal saldoAnterior) {
-        /*
-         * O DAO JDBC garante atomicidade de saldo e histórico. O caminho
-         * legado é mantido para DAOs de teste e implementações externas.
-         */
-        contaDAO.movimentarComTransacao(conta, transacao, saldoAnterior);
+    private void persistirMovimentacao(ContaBancaria conta, Transacao transacao) {
+        contaDAO.movimentarComTransacao(conta, transacao);
     }
 
     private String validarCpf(String cpf) {

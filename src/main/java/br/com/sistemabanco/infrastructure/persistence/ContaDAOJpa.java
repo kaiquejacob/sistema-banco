@@ -20,8 +20,10 @@ import br.com.sistemabanco.infrastructure.persistence.repository.ContaJpaReposit
 import br.com.sistemabanco.infrastructure.persistence.repository.EnderecoJpaRepository;
 import br.com.sistemabanco.infrastructure.persistence.repository.TransacaoJpaRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.sistemabanco.domain.exception.ContaNaoEncontradaException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -107,25 +109,19 @@ public class ContaDAOJpa implements ContaDAO {
             ContaBancaria conta,
             Transacao transacao
     ) {
-        movimentarComTransacao(conta, transacao, null);
-    }
-
-    @Override
-    @Transactional
-    public void movimentarComTransacao(
-            ContaBancaria conta,
-            Transacao transacao,
-            BigDecimal saldoAnterior
-    ) {
         ContaEntity entity = buscarEntity(conta.getCpf());
-
-        verificarSaldoAnterior(entity, saldoAnterior);
 
         atualizarEstadoFinanceiro(conta, entity);
 
         transacaoRepository.save(
                 TransacaoPersistenceMapper.toEntity(transacao, entity)
         );
+
+        try {
+            contaRepository.flush();
+        } catch (OptimisticLockingFailureException exception) {
+            throw conflitoConcorrencia(exception);
+        }
     }
 
     @Override
@@ -135,29 +131,8 @@ public class ContaDAOJpa implements ContaDAO {
             ContaBancaria destino,
             BigDecimal valor
     ) {
-        transferirComTransacao(
-                origem,
-                destino,
-                valor,
-                null,
-                null
-        );
-    }
-
-    @Override
-    @Transactional
-    public void transferirComTransacao(
-            ContaBancaria origem,
-            ContaBancaria destino,
-            BigDecimal valor,
-            BigDecimal saldoOrigemAnterior,
-            BigDecimal saldoDestinoAnterior
-    ) {
         ContaEntity entityOrigem = buscarEntity(origem.getCpf());
         ContaEntity entityDestino = buscarEntity(destino.getCpf());
-
-        verificarSaldoAnterior(entityOrigem, saldoOrigemAnterior);
-        verificarSaldoAnterior(entityDestino, saldoDestinoAnterior);
 
         atualizarEstadoFinanceiro(origem, entityOrigem);
         atualizarEstadoFinanceiro(destino, entityDestino);
@@ -187,6 +162,12 @@ public class ContaDAOJpa implements ContaDAO {
                         entityDestino
                 )
         );
+
+        try {
+            contaRepository.flush();
+        } catch (OptimisticLockingFailureException exception) {
+            throw conflitoConcorrencia(exception);
+        }
     }
 
     @Override
@@ -253,7 +234,7 @@ public class ContaDAOJpa implements ContaDAO {
 
     private ContaEntity buscarEntity(String cpf) {
         return contaRepository.findById(cpf)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ContaNaoEncontradaException(
                         "Conta não encontrada para o CPF: " + cpf
                 ));
     }
@@ -281,17 +262,14 @@ public class ContaDAOJpa implements ContaDAO {
         }
     }
 
-    private void verificarSaldoAnterior(
-            ContaEntity entity,
-            BigDecimal saldoAnterior
+    private ConflitoConcorrenciaException conflitoConcorrencia(
+            OptimisticLockingFailureException exception
     ) {
-        if (saldoAnterior != null
-                && entity.getSaldo().compareTo(saldoAnterior) != 0) {
-            throw new ConflitoConcorrenciaException(
-                    "A conta foi alterada por outra operação. "
-                            + "Consulte o saldo atualizado e tente novamente."
-            );
-        }
+        return new ConflitoConcorrenciaException(
+                "A conta foi alterada por outra operação. "
+                        + "Consulte o saldo atualizado e tente novamente.",
+                exception
+        );
     }
 
     private void sincronizarEndereco(
