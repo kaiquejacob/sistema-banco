@@ -13,24 +13,7 @@ public interface ContaDAO {
     void registrarTransacao(String cpf, Transacao transacao);
     void transferirComTransacao(ContaBancaria origem, ContaBancaria destino, BigDecimal valor);
 
-    /**
-     * Implementações JDBC sobrescrevem este método para executar saldo e
-     * histórico na mesma transação. O comportamento padrão mantém
-     * compatibilidade com DAOs de testes e implementações legadas.
-     */
-    default void movimentarComTransacao(ContaBancaria conta, Transacao transacao) {
-        atualizarSaldoESaques(conta);
-        registrarTransacao(conta.getCpf(), transacao);
-    }
-
-    default void movimentarComTransacao(ContaBancaria conta, Transacao transacao, BigDecimal saldoAnterior) {
-        movimentarComTransacao(conta, transacao);
-    }
-
-    default void transferirComTransacao(ContaBancaria origem, ContaBancaria destino, BigDecimal valor,
-                                        BigDecimal saldoOrigemAnterior, BigDecimal saldoDestinoAnterior) {
-        transferirComTransacao(origem, destino, valor);
-    }
+    void movimentarComTransacao(ContaBancaria conta, Transacao transacao);
 
     void deletar(String cpf);
     List<ContaBancaria> buscarTodas();

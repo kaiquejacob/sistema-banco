@@ -85,7 +85,6 @@ class ContaDAOJpaTest {
 
         contaDAO.salvar(conta);
 
-        BigDecimal saldoAnterior = conta.getSaldo();
         BigDecimal valorDeposito = new BigDecimal("150.00");
 
         conta.depositar(valorDeposito);
@@ -96,11 +95,7 @@ class ContaDAOJpaTest {
                         valorDeposito
                 );
 
-        contaDAO.movimentarComTransacao(
-                conta,
-                transacao,
-                saldoAnterior
-        );
+        contaDAO.movimentarComTransacao(conta, transacao);
 
         ContaBancaria contaAtualizada =
                 contaDAO.buscarPorCpf("11144477735").orElseThrow();
@@ -158,8 +153,6 @@ class ContaDAOJpaTest {
         contaDAO.salvar(origem);
         contaDAO.salvar(destino);
 
-        BigDecimal saldoOrigemAnterior = origem.getSaldo();
-        BigDecimal saldoDestinoAnterior = destino.getSaldo();
         BigDecimal valor = new BigDecimal("100.00");
 
         origem.debitarTransferencia(valor);
@@ -168,13 +161,7 @@ class ContaDAOJpaTest {
                 br.com.sistemabanco.domain.model.TipoTransacao.TRANSFERENCIA_RECEBIDA
         );
 
-        contaDAO.transferirComTransacao(
-                origem,
-                destino,
-                valor,
-                saldoOrigemAnterior,
-                saldoDestinoAnterior
-        );
+        contaDAO.transferirComTransacao(origem, destino, valor);
 
         ContaBancaria origemAtualizada =
                 contaDAO.buscarPorCpf("11144477735").orElseThrow();
@@ -203,61 +190,6 @@ class ContaDAOJpaTest {
                         == br.com.sistemabanco.domain.model.TipoTransacao.TRANSFERENCIA_RECEBIDA
                         && t.getValor().compareTo(valor) == 0
         ));
-    }
-
-    @Test
-    void deveRejeitarOperacaoQuandoSaldoAnteriorEstiverDesatualizado()
-            throws Exception {
-
-        Endereco endereco = new Endereco(
-                "01001000",
-                "Praca da Se",
-                "Se",
-                "Sao Paulo",
-                "SP"
-        );
-
-        ContaBancaria conta = new ContaCorrente(
-                "Cliente Concorrencia",
-                new BigDecimal("1000.00"),
-                "52998224725",
-                "concorrencia@example.com",
-                endereco
-        );
-
-        contaDAO.salvar(conta);
-
-        // Simula o saldo que uma operação teria lido anteriormente.
-        BigDecimal saldoAnteriorDesatualizado =
-                new BigDecimal("900.00");
-
-        BigDecimal valorDeposito = new BigDecimal("100.00");
-
-        conta.depositar(valorDeposito);
-
-        br.com.sistemabanco.domain.model.Transacao transacao =
-                new br.com.sistemabanco.domain.model.Transacao(
-                        br.com.sistemabanco.domain.model.TipoTransacao.DEPOSITO,
-                        valorDeposito
-                );
-
-        assertThrows(
-                br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException.class,
-                () -> contaDAO.movimentarComTransacao(
-                        conta,
-                        transacao,
-                        saldoAnteriorDesatualizado
-                )
-        );
-
-        ContaBancaria contaPersistida =
-                contaDAO.buscarPorCpf("52998224725").orElseThrow();
-
-        assertEquals(
-                0,
-                new BigDecimal("1000.00")
-                        .compareTo(contaPersistida.getSaldo())
-        );
     }
 
     @Test
@@ -322,8 +254,7 @@ class ContaDAOJpaTest {
 
         contaDAO.movimentarComTransacao(
                 conta,
-                transacao,
-                new BigDecimal("500.00")
+                transacao
         );
 
         assertThrows(
@@ -354,6 +285,29 @@ class ContaDAOJpaTest {
         );
     }
 
+    @Test
+    void deveLancarContaNaoEncontradaAoAtualizarContaInexistente() {
+        Endereco endereco = new Endereco(
+                "01001000",
+                "Praca da Se",
+                "Se",
+                "Sao Paulo",
+                "SP"
+        );
+
+        ContaBancaria contaNaoSalva = new ContaCorrente(
+                "Cliente Inexistente",
+                new BigDecimal("100.00"),
+                "16899535009",
+                "inexistente@example.com",
+                endereco
+        );
+
+        assertThrows(
+                br.com.sistemabanco.domain.exception.ContaNaoEncontradaException.class,
+                () -> contaDAO.atualizarSaldoESaques(contaNaoSalva)
+        );
+    }
 
 
 }
