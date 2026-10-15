@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS contas (
     tipo VARCHAR(50) NOT NULL,
     data_abertura DATE NOT NULL DEFAULT (CURRENT_DATE),
     saques_realizados INT NOT NULL DEFAULT 0,
-    data_ultimo_saque DATE NULL
+    data_ultimo_saque DATE NULL,
+    version BIGINT NOT NULL DEFAULT 0
     );
 
 CREATE TABLE IF NOT EXISTS enderecos (

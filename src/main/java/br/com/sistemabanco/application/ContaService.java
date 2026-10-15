@@ -9,12 +9,14 @@ import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
 import br.com.sistemabanco.util.Validador;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class ContaService {
 
     private final ContaDAO contaDAO;

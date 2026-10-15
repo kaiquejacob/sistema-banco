@@ -3,6 +3,7 @@ package br.com.sistemabanco.infrastructure.client;
 import br.com.sistemabanco.domain.exception.ServicoCepException;
 import br.com.sistemabanco.domain.model.Endereco;
 import br.com.sistemabanco.domain.service.CepService;
+import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class CepServiceImpl implements CepService {
 
     private static final String VIA_CEP_URL = "https://viacep.com.br/ws/%s/json/";
