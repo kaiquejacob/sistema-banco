@@ -4,8 +4,13 @@ import java.util.regex.Pattern;
 
 public class Validador {
 
-    private static final Pattern PATTERN_NOME = Pattern.compile("^[\\p{L}\\s]+$");
-    private static final Pattern PATTERN_EMAIL = Pattern.compile("^[a-zA-Z0-9._-]+@[a-zA-Z]+\\.[a-zA-Z]+$");
+    private static final int TAMANHO_MAXIMO_NOME = 100;
+    private static final int TAMANHO_MAXIMO_EMAIL = 100;
+
+    private static final Pattern PATTERN_NOME = Pattern.compile("^\\p{L}[\\p{L}\\s'.-]*$");
+
+    private static final Pattern PATTERN_EMAIL =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\\.)+[A-Za-z]{2,}$");
 
     private Validador() {
     }
@@ -14,10 +19,11 @@ public class Validador {
         if (nome == null) {
             return false;
         }
-        boolean temConteudo = !nome.trim().isEmpty();
-        boolean bate = PATTERN_NOME.matcher(nome).matches();
 
-        return temConteudo && bate;
+        String limpo = nome.strip();
+        return !limpo.isEmpty()
+                && limpo.length() <= TAMANHO_MAXIMO_NOME
+                && PATTERN_NOME.matcher(limpo).matches();
     }
 
     public static boolean validarCpf(String cpf) {
@@ -76,8 +82,8 @@ public class Validador {
         return cpf.replace(".", "").replace("-", "").replace(" ", "");
     }
 
-    public static boolean validarEmail(String email){
-        if (email == null) {
+    public static boolean validarEmail(String email) {
+        if (email == null || email.length() > TAMANHO_MAXIMO_EMAIL) {
             return false;
         }
         return PATTERN_EMAIL.matcher(email).matches();

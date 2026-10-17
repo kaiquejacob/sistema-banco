@@ -21,4 +21,44 @@ class ValidadorTest {
 
         assertFalse(resultado, "CPF com dígitos repetidos deveria ser inválido");
     }
+
+    @Test
+    void deveAceitarEmailsComDominioDeVariosNiveis() {
+        assertTrue(Validador.validarEmail("joao@email.com"));
+        assertTrue(Validador.validarEmail("joao@empresa.com.br"));
+        assertTrue(Validador.validarEmail("joao.silva+banco@sub.empresa.com.br"));
+    }
+
+    @Test
+    void deveRejeitarEmailsInvalidos() {
+        assertFalse(Validador.validarEmail(null));
+        assertFalse(Validador.validarEmail(""));
+        assertFalse(Validador.validarEmail("joao"));
+        assertFalse(Validador.validarEmail("joao@"));
+        assertFalse(Validador.validarEmail("@email.com"));
+        assertFalse(Validador.validarEmail("joao@email"));
+        assertFalse(Validador.validarEmail("joao@email.c"));
+        assertFalse(Validador.validarEmail("joao silva@email.com"));
+        assertFalse(Validador.validarEmail("a".repeat(95) + "@x.com"));
+    }
+
+    @Test
+    void deveAceitarNomesComAcentoApostrofoHifenEPonto() {
+        assertTrue(Validador.validarNome("João da Silva"));
+        assertTrue(Validador.validarNome("Maria-Clara Souza"));
+        assertTrue(Validador.validarNome("Ana D'Ávila"));
+        assertTrue(Validador.validarNome("Carlos Pereira Jr."));
+    }
+
+    @Test
+    void deveRejeitarNomesInvalidos() {
+        assertFalse(Validador.validarNome(null));
+        assertFalse(Validador.validarNome(""));
+        assertFalse(Validador.validarNome("   "));
+        assertFalse(Validador.validarNome("João123"));
+        assertFalse(Validador.validarNome("-João"));
+        assertFalse(Validador.validarNome("João@Silva"));
+        assertFalse(Validador.validarNome("a".repeat(101)));
+    }
+
 }

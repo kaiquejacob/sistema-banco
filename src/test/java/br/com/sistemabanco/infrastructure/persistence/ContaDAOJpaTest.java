@@ -3,6 +3,7 @@ package br.com.sistemabanco.infrastructure.persistence;
 import br.com.sistemabanco.domain.model.ContaBancaria;
 import br.com.sistemabanco.domain.model.ContaCorrente;
 import br.com.sistemabanco.domain.model.Endereco;
+import br.com.sistemabanco.domain.model.ResumoConta;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.infrastructure.persistence.repository.ContaJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -95,7 +97,7 @@ class ContaDAOJpaTest {
                         valorDeposito
                 );
 
-        contaDAO.movimentarComTransacao(conta, transacao);
+        contaDAO.movimentarComTransacao(conta, List.of(transacao));
 
         ContaBancaria contaAtualizada =
                 contaDAO.buscarPorCpf("11144477735").orElseThrow();
@@ -252,17 +254,11 @@ class ContaDAOJpaTest {
                         valorDeposito
                 );
 
-        contaDAO.movimentarComTransacao(
-                conta,
-                transacao
-        );
+        contaDAO.movimentarComTransacao(conta, List.of(transacao));
 
         assertThrows(
-                RuntimeException.class,
-                () -> {
-                    contaDAO.deletar("12345678909");
-                    contaRepository.flush();
-                }
+                br.com.sistemabanco.domain.exception.ContaComHistoricoException.class,
+                () -> contaDAO.deletar("12345678909")
         );
 
         assertTrue(
@@ -303,10 +299,104 @@ class ContaDAOJpaTest {
                 endereco
         );
 
+        br.com.sistemabanco.domain.model.Transacao transacao =
+                new br.com.sistemabanco.domain.model.Transacao(
+                        br.com.sistemabanco.domain.model.TipoTransacao.DEPOSITO,
+                        new BigDecimal("10.00")
+                );
+
         assertThrows(
                 br.com.sistemabanco.domain.exception.ContaNaoEncontradaException.class,
-                () -> contaDAO.atualizarSaldoESaques(contaNaoSalva)
+                () -> contaDAO.movimentarComTransacao(contaNaoSalva, List.of(transacao))
         );
+    }
+
+    @Test
+    void devePersistirSaqueDeHojeERestaurarOLimiteDiarioAoRecarregar() {
+        Endereco endereco = new Endereco("01001000", "Praca da Se", "Se", "Sao Paulo", "SP");
+
+        ContaBancaria conta = new ContaCorrente(
+                "Cliente Limite",
+                new BigDecimal("5000.00"),
+                "52998224725",
+                "limite@example.com",
+                endereco
+        );
+        contaDAO.salvar(conta);
+
+        int tamanhoAntes = conta.getHistorico().size();
+        conta.sacar(new BigDecimal("2000.00"));
+        contaDAO.movimentarComTransacao(
+                conta,
+                List.copyOf(conta.getHistorico().subList(tamanhoAntes, conta.getHistorico().size()))
+        );
+
+        ContaBancaria recarregada = contaDAO.buscarPorCpf("52998224725").orElseThrow();
+
+        assertEquals(0, new BigDecimal("2000.00").compareTo(recarregada.getValorSaquesHoje()));
+        assertThrows(
+                br.com.sistemabanco.domain.exception.SaldoInsuficienteException.class,
+                () -> recarregada.sacar(new BigDecimal("1.00"))
+        );
+    }
+
+    @Test
+    void devePersistirSaqueETaxaComoDuasTransacoesQueBatemComOSaldo() {
+        Endereco endereco = new Endereco("01001000", "Praca da Se", "Se", "Sao Paulo", "SP");
+
+        ContaBancaria conta = new ContaCorrente(
+                "Cliente Taxa",
+                new BigDecimal("1000.00"),
+                "11144477735",
+                "taxa@example.com",
+                java.time.LocalDate.now(),
+                endereco,
+                2,
+                java.time.LocalDate.now()
+        );
+        contaDAO.salvar(conta);
+
+        int tamanhoAntes = conta.getHistorico().size();
+        conta.sacar(new BigDecimal("100.00"));
+        contaDAO.movimentarComTransacao(
+                conta,
+                List.copyOf(conta.getHistorico().subList(tamanhoAntes, conta.getHistorico().size()))
+        );
+
+        ContaBancaria recarregada = contaDAO.buscarPorCpf("11144477735").orElseThrow();
+
+        assertEquals(0, new BigDecimal("890.00").compareTo(recarregada.getSaldo()));
+        assertEquals(2, recarregada.getHistorico().size());
+        assertEquals(
+                br.com.sistemabanco.domain.model.TipoTransacao.SAQUE,
+                recarregada.getHistorico().get(0).getTipo()
+        );
+        assertEquals(
+                br.com.sistemabanco.domain.model.TipoTransacao.TAXA_SAQUE,
+                recarregada.getHistorico().get(1).getTipo()
+        );
+    }
+
+    @Test
+    void deveListarResumosPorSaldoDecrescenteComPaginacao() {
+        Endereco endereco = new Endereco("01001000", "Praca da Se", "Se", "Sao Paulo", "SP");
+
+        contaDAO.salvar(new ContaCorrente("Resumo Menor", new BigDecimal("700000.00"),
+                "52998224725", "resumo.menor@example.com", endereco));
+        contaDAO.salvar(new ContaCorrente("Resumo Maior", new BigDecimal("900000.00"),
+                "11144477735", "resumo.maior@example.com", endereco));
+        contaDAO.salvar(new ContaCorrente("Resumo Meio", new BigDecimal("800000.00"),
+                "12345678909", "resumo.meio@example.com", endereco));
+
+        List<ResumoConta> primeiraPagina = contaDAO.listarResumosPorSaldo(0, 2);
+        List<ResumoConta> segundaPagina = contaDAO.listarResumosPorSaldo(1, 2);
+
+        assertEquals(2, primeiraPagina.size());
+        assertEquals("11144477735", primeiraPagina.get(0).cpf());
+        assertEquals("12345678909", primeiraPagina.get(1).cpf());
+        assertEquals("52998224725", segundaPagina.get(0).cpf());
+        assertEquals("Resumo Maior", primeiraPagina.get(0).titular());
+        assertTrue(contaDAO.contarContas() >= 3);
     }
 
 

@@ -112,12 +112,18 @@ public class ContaBancaria {
         }
     }
 
-    private void registrarSaque(BigDecimal valor) {
-        if (!LocalDate.now().equals(dataControleSaques)) {
+    private void renovarControleDiarioSeNecessario() {
+        LocalDate hoje = LocalDate.now();
+        if (!hoje.equals(dataControleSaques)) {
             valorSaquesHoje = BigDecimal.ZERO;
-            dataControleSaques = LocalDate.now();
+            dataControleSaques = hoje;
         }
+    }
+
+    private void registrarSaque(BigDecimal valor) {
+        renovarControleDiarioSeNecessario();
         BigDecimal limite = tipoConta.obterLimiteSaqueDiario();
+
         if (valorSaquesHoje.add(valor).compareTo(limite) > 0) {
             throw new SaldoInsuficienteException("Limite diário de saque excedido. Limite: R$" + limite);
         }
@@ -176,11 +182,23 @@ public class ContaBancaria {
         this.endereco = endereco;
     }
 
+    public void registrarAbertura() {
+        if (historico.isEmpty() && saldo.signum() > 0) {
+            historico.add(new Transacao(TipoTransacao.ABERTURA_CONTA, saldo));
+        }
+    }
+
     public void adicionarTransacaoExistente(Transacao transacao) {
         if (transacao == null) {
             throw new IllegalArgumentException("Transação não pode ser nula.");
         }
         this.historico.add(transacao);
+
+        if (transacao.getTipo() == TipoTransacao.SAQUE
+                && transacao.getDataHora().toLocalDate().equals(LocalDate.now())) {
+            renovarControleDiarioSeNecessario();
+            this.valorSaquesHoje = this.valorSaquesHoje.add(transacao.getValor());
+        }
     }
 
 
@@ -193,10 +211,7 @@ public class ContaBancaria {
     }
 
     public BigDecimal getValorSaquesHoje() {
-        if (!LocalDate.now().equals(dataControleSaques)) {
-            valorSaquesHoje = BigDecimal.ZERO;
-            dataControleSaques = LocalDate.now();
-        }
+        renovarControleDiarioSeNecessario();
         return valorSaquesHoje;
     }
 }

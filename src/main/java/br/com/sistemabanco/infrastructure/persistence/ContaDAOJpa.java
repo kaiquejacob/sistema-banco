@@ -1,14 +1,7 @@
 package br.com.sistemabanco.infrastructure.persistence;
 
-import br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException;
-import br.com.sistemabanco.domain.exception.CpfInvalidoException;
-import br.com.sistemabanco.domain.exception.CpfJaCadastradoException;
-import br.com.sistemabanco.domain.exception.EmailInvalidoException;
-import br.com.sistemabanco.domain.model.ContaBancaria;
-import br.com.sistemabanco.domain.model.ContaCorrente;
-import br.com.sistemabanco.domain.model.Endereco;
-import br.com.sistemabanco.domain.model.TipoTransacao;
-import br.com.sistemabanco.domain.model.Transacao;
+import br.com.sistemabanco.domain.exception.*;
+import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.infrastructure.persistence.entity.ContaEntity;
 import br.com.sistemabanco.infrastructure.persistence.entity.EnderecoEntity;
@@ -21,9 +14,13 @@ import br.com.sistemabanco.infrastructure.persistence.repository.EnderecoJpaRepo
 import br.com.sistemabanco.infrastructure.persistence.repository.TransacaoJpaRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
-import br.com.sistemabanco.domain.exception.ContaNaoEncontradaException;
+import org.springframework.transaction.support.TransactionTemplate;
+
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -36,25 +33,30 @@ public class ContaDAOJpa implements ContaDAO {
     private final ContaJpaRepository contaRepository;
     private final EnderecoJpaRepository enderecoRepository;
     private final TransacaoJpaRepository transacaoRepository;
+    private final TransactionTemplate consultaEmNovaTransacao;
 
     public ContaDAOJpa(
             ContaJpaRepository contaRepository,
             EnderecoJpaRepository enderecoRepository,
-            TransacaoJpaRepository transacaoRepository
+            TransacaoJpaRepository transacaoRepository,
+            PlatformTransactionManager transactionManager
     ) {
         this.contaRepository = contaRepository;
         this.enderecoRepository = enderecoRepository;
         this.transacaoRepository = transacaoRepository;
+
+        this.consultaEmNovaTransacao = new TransactionTemplate(transactionManager);
+        this.consultaEmNovaTransacao.setPropagationBehavior(
+                TransactionDefinition.PROPAGATION_REQUIRES_NEW
+        );
+        this.consultaEmNovaTransacao.setReadOnly(true);
     }
 
     @Override
     @Transactional
     public void salvar(ContaBancaria conta) {
         if (contaRepository.existsById(conta.getCpf())) {
-            throw new CpfJaCadastradoException(
-                    "Já existe uma conta cadastrada para o CPF: "
-                            + conta.getCpf()
-            );
+            throw cpfJaCadastrado(conta.getCpf());
         }
 
         ContaEntity entity = new ContaEntity();
@@ -62,66 +64,39 @@ public class ContaDAOJpa implements ContaDAO {
 
         try {
             entity = contaRepository.saveAndFlush(entity);
-
-            sincronizarEndereco(conta.getEndereco(), entity);
-
-            for (Transacao transacao : conta.getHistorico()) {
-                transacaoRepository.save(
-                        TransacaoPersistenceMapper.toEntity(
-                                transacao,
-                                entity
-                        )
-                );
-            }
         } catch (DataIntegrityViolationException exception) {
-            if (contaRepository.existsById(conta.getCpf())) {
-                throw new CpfJaCadastradoException(
-                        "Já existe uma conta cadastrada para o CPF: "
-                                + conta.getCpf()
-                );
+            if (existeEmNovaTransacao(conta.getCpf())) {
+                throw cpfJaCadastrado(conta.getCpf());
             }
-
             throw exception;
         }
-    }
 
-    @Override
-    @Transactional
-    public void atualizarSaldoESaques(ContaBancaria conta) {
-        ContaEntity entity = buscarEntity(conta.getCpf());
+        sincronizarEndereco(conta.getEndereco(), entity);
 
-        atualizarEstadoFinanceiro(conta, entity);
-    }
-
-    @Override
-    @Transactional
-    public void registrarTransacao(String cpf, Transacao transacao) {
-        ContaEntity conta = buscarEntity(cpf);
-
-        transacaoRepository.save(
-                TransacaoPersistenceMapper.toEntity(transacao, conta)
-        );
+        for (Transacao transacao : conta.getHistorico()) {
+            transacaoRepository.save(
+                    TransacaoPersistenceMapper.toEntity(transacao, entity)
+            );
+        }
     }
 
     @Override
     @Transactional
     public void movimentarComTransacao(
             ContaBancaria conta,
-            Transacao transacao
+            List<Transacao> novasTransacoes
     ) {
         ContaEntity entity = buscarEntity(conta.getCpf());
 
         atualizarEstadoFinanceiro(conta, entity);
 
-        transacaoRepository.save(
-                TransacaoPersistenceMapper.toEntity(transacao, entity)
-        );
-
-        try {
-            contaRepository.flush();
-        } catch (OptimisticLockingFailureException exception) {
-            throw conflitoConcorrencia(exception);
+        for (Transacao transacao : novasTransacoes) {
+            transacaoRepository.save(
+                    TransacaoPersistenceMapper.toEntity(transacao, entity)
+            );
         }
+
+        enviarAlteracoesTraduzindoConflito();
     }
 
     @Override
@@ -163,18 +138,14 @@ public class ContaDAOJpa implements ContaDAO {
                 )
         );
 
-        try {
-            contaRepository.flush();
-        } catch (OptimisticLockingFailureException exception) {
-            throw conflitoConcorrencia(exception);
-        }
+        enviarAlteracoesTraduzindoConflito();
     }
 
     @Override
     @Transactional
     public void deletar(String cpf) {
         if (transacaoRepository.existsByConta_Cpf(cpf)) {
-            throw new IllegalStateException(
+            throw new ContaComHistoricoException(
                     "Não é possível excluir uma conta que possui transações."
             );
         }
@@ -184,29 +155,38 @@ public class ContaDAOJpa implements ContaDAO {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ContaBancaria> buscarTodas() {
-        List<ContaEntity> entities = contaRepository.findAll();
-        List<ContaBancaria> contas = new ArrayList<>();
+    public List<ResumoConta> listarResumosPorSaldo(int pagina, int tamanho) {
+        return contaRepository.listarResumosPorSaldo(
+                PageRequest.of(pagina, tamanho)
+        );
+    }
 
-        for (ContaEntity entity : entities) {
-            ContaBancaria conta = converterParaDominio(entity);
+    @Override
+    @Transactional(readOnly = true)
+    public long contarContas() {
+        return contaRepository.count();
+    }
 
-            List<TransacaoEntity> transacoes =
-                    transacaoRepository
-                            .findByConta_CpfOrderByDataHoraAscIdAsc(
-                                    entity.getCpf()
-                            );
+    private boolean existeEmNovaTransacao(String cpf) {
+        return Boolean.TRUE.equals(
+                consultaEmNovaTransacao.execute(
+                        status -> contaRepository.existsById(cpf)
+                )
+        );
+    }
 
-            for (TransacaoEntity transacao : transacoes) {
-                conta.adicionarTransacaoExistente(
-                        TransacaoPersistenceMapper.toDomain(transacao)
-                );
-            }
+    private CpfJaCadastradoException cpfJaCadastrado(String cpf) {
+        return new CpfJaCadastradoException(
+                "Já existe uma conta cadastrada para o CPF: " + cpf
+        );
+    }
 
-            contas.add(conta);
+    private void enviarAlteracoesTraduzindoConflito() {
+        try {
+            contaRepository.flush();
+        } catch (OptimisticLockingFailureException exception) {
+            throw conflitoConcorrencia(exception);
         }
-
-        return contas;
     }
 
     @Override

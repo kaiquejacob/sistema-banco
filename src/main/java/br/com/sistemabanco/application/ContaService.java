@@ -13,9 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ContaService {
@@ -37,25 +35,30 @@ public class ContaService {
             throw new CpfJaCadastradoException("Já existe uma conta cadastrada para o CPF: " + cpfNormalizado);
         }
         Endereco endereco = cepService.buscarEnderecoPorCep(cep);
+
         ContaBancaria conta = ContaFactory.criarConta(tipo, titular, saldo, cpfNormalizado, email, endereco);
+        conta.registrarAbertura();
         contaDAO.salvar(conta);
     }
 
     @Transactional
     public void depositar(String cpf, BigDecimal valor) {
         ContaBancaria conta = buscarConta(cpf);
-        conta.depositar(valor);
-        Transacao transacao = new Transacao(TipoTransacao.DEPOSITO, valor);
-        persistirMovimentacao(conta, transacao);
+        int tamanhoAntes = conta.getHistorico().size();
 
+        conta.depositar(valor);
+
+        persistirNovasTransacoes(conta, tamanhoAntes);
     }
 
     @Transactional
     public void sacar(String cpf, BigDecimal valor) {
         ContaBancaria conta = buscarConta(cpf);
+        int tamanhoAntes = conta.getHistorico().size();
+
         conta.sacar(valor);
-        Transacao transacao = new Transacao(TipoTransacao.SAQUE, valor);
-        persistirMovimentacao(conta, transacao);
+
+        persistirNovasTransacoes(conta, tamanhoAntes);
     }
 
     @Transactional
@@ -65,8 +68,11 @@ public class ContaService {
         if (taxa.signum() == 0) {
             return;
         }
+        int tamanhoAntes = conta.getHistorico().size();
+
         conta.debitarTarifa(taxa, TipoTransacao.TAXA_MANUTENCAO);
-        persistirMovimentacao(conta, new Transacao(TipoTransacao.TAXA_MANUTENCAO, taxa));
+
+        persistirNovasTransacoes(conta, tamanhoAntes);
     }
 
     @Transactional
@@ -93,11 +99,21 @@ public class ContaService {
         contaDAO.deletar(conta.getCpf());
     }
 
+    static final int TAMANHO_MAXIMO_PAGINA = 100;   // coloque junto dos campos da classe
+
     @Transactional(readOnly = true)
-    public List<ContaBancaria> listarTodasOrdenadasPorSaldo() {
-        return contaDAO.buscarTodas().stream()
-                .sorted(Comparator.comparing(ContaBancaria::getSaldo).reversed())
-                .collect(Collectors.toList());
+    public PaginaDeContas listarPorSaldo(int pagina, int tamanho) {
+        if (pagina < 0) {
+            throw new IllegalArgumentException("A página não pode ser negativa.");
+        }
+        if (tamanho < 1 || tamanho > TAMANHO_MAXIMO_PAGINA) {
+            throw new IllegalArgumentException(
+                    "O tamanho da página deve estar entre 1 e " + TAMANHO_MAXIMO_PAGINA + ".");
+        }
+
+        List<ResumoConta> itens = contaDAO.listarResumosPorSaldo(pagina, tamanho);
+        long total = contaDAO.contarContas();
+        return new PaginaDeContas(itens, total, pagina, tamanho);
     }
 
     @Transactional(readOnly = true)
@@ -107,8 +123,10 @@ public class ContaService {
                 .orElseThrow(() -> new ContaNaoEncontradaException("Conta não encontrada para o CPF: " + cpfNormalizado));
     }
 
-    private void persistirMovimentacao(ContaBancaria conta, Transacao transacao) {
-        contaDAO.movimentarComTransacao(conta, transacao);
+    private void persistirNovasTransacoes(ContaBancaria conta, int tamanhoAntes) {
+        List<Transacao> historico = conta.getHistorico();
+        List<Transacao> novas = List.copyOf(historico.subList(tamanhoAntes, historico.size()));
+        contaDAO.movimentarComTransacao(conta, novas);
     }
 
     private String validarCpf(String cpf) {

@@ -51,23 +51,27 @@ public class ContaCorrente extends ContaBancaria {
         verificarResetMensal();
 
         boolean cobraTaxa = saquesRealizados >= LIMITE_SAQUES_GRATUITOS;
-        BigDecimal valorTotal = cobraTaxa ? valor.add(TAXA_SAQUE) : valor;
 
-        try {
-            super.sacar(valorTotal, tipo);
-            saquesRealizados++;
-            dataUltimoSaque = LocalDate.now();
-        } catch (SaldoInsuficienteException e) {
-            if (cobraTaxa) {
+        if (cobraTaxa) {
+            BigDecimal debitoTotal = valor.add(TAXA_SAQUE);
+            if (getSaldo().compareTo(debitoTotal) < 0) {
                 throw new SaldoInsuficienteException(
                         "Valor do saque: R$" + valor +
                                 " | Taxa de saque (franquia mensal excedida): R$" + TAXA_SAQUE +
-                                " | Débito total necessário: R$" + valorTotal +
+                                " | Débito total necessário: R$" + debitoTotal +
                                 "\nSaldo atual em conta: R$" + getSaldo()
                 );
             }
-            throw e;
         }
+
+        super.sacar(valor, tipo);
+
+        if (cobraTaxa) {
+            debitarTarifa(TAXA_SAQUE, TipoTransacao.TAXA_SAQUE);
+        }
+
+        saquesRealizados++;
+        dataUltimoSaque = LocalDate.now();
     }
 
     @Override

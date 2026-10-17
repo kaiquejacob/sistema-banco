@@ -10,9 +10,12 @@ import br.com.sistemabanco.application.ContaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,6 +35,12 @@ class ContaServiceTest {
 
     @InjectMocks
     private ContaService contaService;
+
+    @Captor
+    private ArgumentCaptor<List<Transacao>> transacoesCaptor;
+
+    @Captor
+    private ArgumentCaptor<ContaBancaria> contaCaptor;
 
     private ContaBancaria contaOrigem;
     private ContaBancaria contaDestino;
@@ -132,13 +141,82 @@ class ContaServiceTest {
     }
 
     @Test
-    void deveListarContasOrdenadasPorSaldoDecrescente() {
-        when(contaDAO.buscarTodas()).thenReturn(List.of(contaDestino, contaOrigem));
+    void deveRegistrarSaqueETaxaComoTransacoesSeparadasAposAFranquia() {
+        when(contaDAO.buscarPorCpf("12345678909")).thenReturn(Optional.of(contaOrigem));
 
-        List<ContaBancaria> resultado = contaService.listarTodasOrdenadasPorSaldo();
+        contaService.sacar("12345678909", new BigDecimal("100.00"));
+        contaService.sacar("12345678909", new BigDecimal("100.00"));
+        contaService.sacar("12345678909", new BigDecimal("100.00"));
 
-        assertEquals(2, resultado.size());
-        assertEquals("12345678909", resultado.get(0).getCpf());
-        assertEquals("98765432100", resultado.get(1).getCpf());
+        verify(contaDAO, times(3)).movimentarComTransacao(eq(contaOrigem), transacoesCaptor.capture());
+
+        List<Transacao> primeira = transacoesCaptor.getAllValues().get(0);
+        assertEquals(1, primeira.size());
+        assertEquals(TipoTransacao.SAQUE, primeira.get(0).getTipo());
+
+        List<Transacao> terceira = transacoesCaptor.getAllValues().get(2);
+        assertEquals(2, terceira.size());
+        assertEquals(TipoTransacao.SAQUE, terceira.get(0).getTipo());
+        assertEquals(0, new BigDecimal("100.00").compareTo(terceira.get(0).getValor()));
+        assertEquals(TipoTransacao.TAXA_SAQUE, terceira.get(1).getTipo());
+        assertEquals(0, new BigDecimal("10.00").compareTo(terceira.get(1).getValor()));
+
+        // 1000 - 3 saques de 100 - taxa de 10 = 690: o extrato bate com o saldo.
+        assertEquals(0, new BigDecimal("690.00").compareTo(contaOrigem.getSaldo()));
+    }
+
+    @Test
+    void deveEnviarAoDaoApenasAsTransacoesNovasDaOperacao() {
+        contaOrigem.depositar(new BigDecimal("50.00"));
+        when(contaDAO.buscarPorCpf("12345678909")).thenReturn(Optional.of(contaOrigem));
+
+        contaService.depositar("12345678909", new BigDecimal("300.00"));
+
+        verify(contaDAO).movimentarComTransacao(eq(contaOrigem), transacoesCaptor.capture());
+        List<Transacao> enviadas = transacoesCaptor.getValue();
+        assertEquals(1, enviadas.size());
+        assertEquals(TipoTransacao.DEPOSITO, enviadas.get(0).getTipo());
+        assertEquals(0, new BigDecimal("300.00").compareTo(enviadas.get(0).getValor()));
+    }
+
+    @Test
+    void deveRegistrarAberturaDeContaAoCriarComSaldoInicial() {
+        Endereco endereco = new Endereco("01001-000", "Praça da Sé", "Lado ímpar", "Sé", "SP");
+        when(cepService.buscarEnderecoPorCep("01001-000")).thenReturn(endereco);
+
+        contaService.criarConta(TipoConta.CORRENTE, "Carlos", new BigDecimal("100.00"),
+                "11144477735", "carlos@email.com", "01001-000");
+
+        verify(contaDAO).salvar(contaCaptor.capture());
+        ContaBancaria criada = contaCaptor.getValue();
+        assertEquals(1, criada.getHistorico().size());
+        assertEquals(TipoTransacao.ABERTURA_CONTA, criada.getHistorico().get(0).getTipo());
+        assertEquals(0, new BigDecimal("100.00").compareTo(criada.getHistorico().get(0).getValor()));
+    }
+
+    @Test
+    void devePaginarResumosDeContaPorSaldo() {
+        List<ResumoConta> resumos = List.of(
+                new ResumoConta("12345678909", "João Silva", TipoConta.CORRENTE, new BigDecimal("1000.00")),
+                new ResumoConta("98765432100", "Maria Souza", TipoConta.CORRENTE, new BigDecimal("500.00")));
+        when(contaDAO.listarResumosPorSaldo(0, 10)).thenReturn(resumos);
+        when(contaDAO.contarContas()).thenReturn(25L);
+
+        PaginaDeContas pagina = contaService.listarPorSaldo(0, 10);
+
+        assertEquals(resumos, pagina.itens());
+        assertEquals(25L, pagina.total());
+        assertEquals(0, pagina.pagina());
+        assertEquals(10, pagina.tamanho());
+        assertEquals(3, pagina.totalDePaginas());
+    }
+
+    @Test
+    void deveRejeitarParametrosDePaginacaoInvalidos() {
+        assertThrows(IllegalArgumentException.class, () -> contaService.listarPorSaldo(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> contaService.listarPorSaldo(0, 0));
+        assertThrows(IllegalArgumentException.class, () -> contaService.listarPorSaldo(0, 101));
+
+        verify(contaDAO, never()).listarResumosPorSaldo(anyInt(), anyInt());
     }
 }
