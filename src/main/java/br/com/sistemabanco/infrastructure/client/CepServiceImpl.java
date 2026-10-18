@@ -4,31 +4,62 @@ import br.com.sistemabanco.domain.exception.ServicoCepException;
 import br.com.sistemabanco.domain.model.Endereco;
 import br.com.sistemabanco.domain.service.CepService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class CepServiceImpl implements CepService {
 
-    private static final String VIA_CEP_URL = "https://viacep.com.br/ws/%s/json/";
-    private final HttpClient httpClient;
+    private static final int TAMANHO_MAXIMO_CACHE = 1000;
 
-    public CepServiceImpl() {
-        this(HttpClient.newHttpClient());
-    }
+    private final RestClient restClient;
+    private final Map<String, Endereco> cache = new ConcurrentHashMap<>();
 
-    CepServiceImpl(HttpClient httpClient) {
-        this.httpClient = httpClient;
+    public CepServiceImpl(RestClient restClient) {
+        this.restClient = restClient;
     }
 
     @Override
     public Endereco buscarEnderecoPorCep(String cep) {
+        String cepLimpo = normalizar(cep);
+
+        Endereco emCache = cache.get(cepLimpo);
+        if (emCache != null) {
+            return emCache;
+        }
+
+        ViaCepResponse resposta;
+        try {
+            resposta = restClient.get()
+                    .uri("/{cep}/json/", cepLimpo)
+                    .retrieve()
+                    .body(ViaCepResponse.class);
+        } catch (RestClientException e) {
+            throw new ServicoCepException("Falha ao consultar o serviço de CEP: " + e.getMessage(), e);
+        }
+
+        if (resposta == null || resposta.erro() != null) {
+            throw new IllegalArgumentException("CEP não encontrado: " + cep);
+        }
+
+        Endereco endereco = new Endereco(
+                cepLimpo,
+                valorOuVazio(resposta.logradouro()),
+                valorOuVazio(resposta.bairro()),
+                valorOuVazio(resposta.localidade()),
+                valorOuVazio(resposta.uf())
+        );
+
+        if (cache.size() < TAMANHO_MAXIMO_CACHE) {
+            cache.put(cepLimpo, endereco);
+        }
+        return endereco;
+    }
+
+    private String normalizar(String cep) {
         if (cep == null) {
             throw new IllegalArgumentException("CEP não pode ser nulo.");
         }
@@ -36,40 +67,10 @@ public class CepServiceImpl implements CepService {
         if (cepLimpo.length() != 8) {
             throw new IllegalArgumentException("CEP deve ter exatamente 8 dígitos.");
         }
-
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(String.format(VIA_CEP_URL, cepLimpo)))
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200 || response.body().contains("\"erro\":")) {
-                throw new IllegalArgumentException("CEP não encontrado ou inválido: " + cep);
-            }
-
-            String json = response.body();
-            String logradouro = extrairCampo(json, "logradouro");
-            String bairro = extrairCampo(json, "bairro");
-            String cidade = extrairCampo(json, "localidade");
-            String estado = extrairCampo(json, "uf");
-
-            return new Endereco(cepLimpo, logradouro, bairro, cidade, estado);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ServicoCepException("Falha ao consultar serviço de CEP no ViaCEP: " + e.getMessage(), e);
-        }
+        return cepLimpo;
     }
 
-    private String extrairCampo(String json, String campo) {
-        Pattern pattern = Pattern.compile("\"" + campo + "\":\\s*\"(.*?)\"");
-        Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return "";
+    private String valorOuVazio(String valor) {
+        return valor != null ? valor : "";
     }
 }

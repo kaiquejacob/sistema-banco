@@ -233,4 +233,5 @@ class RestExceptionHandlerTest {
                 .andExpect(jsonPath("$.title").value("Erro interno"))
                 .andExpect(jsonPath("$.detail").value(not(containsString("senha"))));
     }
+
 }
