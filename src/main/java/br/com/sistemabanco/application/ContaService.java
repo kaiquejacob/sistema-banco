@@ -29,16 +29,16 @@ public class ContaService {
         this.cepService = cepService;
     }
 
-    public void criarConta(TipoConta tipo, String titular, BigDecimal saldo, String cpf, String email, String cep) {
+    public ContaBancaria criarConta(TipoConta tipo, String titular, BigDecimal saldo, String cpf, String email, String cep) {
         String cpfNormalizado = validarCpf(cpf);
         if (contaDAO.buscarPorCpf(cpfNormalizado).isPresent()) {
             throw new CpfJaCadastradoException("Já existe uma conta cadastrada para o CPF: " + cpfNormalizado);
         }
         Endereco endereco = cepService.buscarEnderecoPorCep(cep);
-
         ContaBancaria conta = ContaFactory.criarConta(tipo, titular, saldo, cpfNormalizado, email, endereco);
         conta.registrarAbertura();
         contaDAO.salvar(conta);
+        return conta;
     }
 
     @Transactional
