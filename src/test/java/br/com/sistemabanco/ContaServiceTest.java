@@ -7,6 +7,7 @@ import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
 import br.com.sistemabanco.application.ContaService;
+import br.com.sistemabanco.application.RegistroDeConta;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +16,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,6 +32,9 @@ class ContaServiceTest {
 
     @Mock
     private CepService cepService;
+
+    @Mock
+    private RegistroDeConta registroDeConta;
 
     @InjectMocks
     private ContaService contaService;
@@ -91,10 +94,10 @@ class ContaServiceTest {
         Endereco endereco = new Endereco("01001-000", "Praça da Sé", "Lado ímpar", "Sé",  "SP");
         when(cepService.buscarEnderecoPorCep("01001-000")).thenReturn(endereco);
 
-        contaService.criarConta(TipoConta.CORRENTE, "Carlos", new BigDecimal("100.00"), "11144477735", "carlos@email.com", "01001-000");
+        contaService.criarConta(TipoConta.CORRENTE, "Carlos", new BigDecimal("100.00"), "11144477735", "carlos@email.com", "01001-000", "Senha#1234");
 
         verify(cepService, times(1)).buscarEnderecoPorCep("01001-000");
-        verify(contaDAO, times(1)).salvar(any(ContaBancaria.class));
+        verify(registroDeConta, times(1)).registrar(any(ContaBancaria.class), eq("Senha#1234"));
     }
 
     @Test
@@ -185,9 +188,9 @@ class ContaServiceTest {
         when(cepService.buscarEnderecoPorCep("01001-000")).thenReturn(endereco);
 
         contaService.criarConta(TipoConta.CORRENTE, "Carlos", new BigDecimal("100.00"),
-                "11144477735", "carlos@email.com", "01001-000");
+                "11144477735", "carlos@email.com", "01001-000", "Senha#1234");
 
-        verify(contaDAO).salvar(contaCaptor.capture());
+        verify(registroDeConta).registrar(contaCaptor.capture(), eq("Senha#1234"));
         ContaBancaria criada = contaCaptor.getValue();
         assertEquals(1, criada.getHistorico().size());
         assertEquals(TipoTransacao.ABERTURA_CONTA, criada.getHistorico().get(0).getTipo());

@@ -30,3 +30,12 @@ CREATE TABLE IF NOT EXISTS transacoes (
     data_hora DATETIME NOT NULL,
     CONSTRAINT fk_transacoes_contas FOREIGN KEY (cpf_titular) REFERENCES contas(cpf) ON DELETE RESTRICT
     );
+
+CREATE TABLE IF NOT EXISTS usuarios (
+                                        login VARCHAR(30) PRIMARY KEY,
+    senha_hash VARCHAR(100) NOT NULL,
+    papel VARCHAR(20) NOT NULL,
+    cpf_titular VARCHAR(11) NULL,
+    CONSTRAINT uq_usuarios_cpf_titular UNIQUE (cpf_titular),
+    CONSTRAINT fk_usuarios_contas FOREIGN KEY (cpf_titular) REFERENCES contas(cpf) ON DELETE CASCADE
+    );

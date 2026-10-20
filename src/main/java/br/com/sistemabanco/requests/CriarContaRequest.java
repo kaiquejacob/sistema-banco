@@ -18,6 +18,13 @@ public record CriarContaRequest(
         @NotBlank @Size(max = 100) @Email String email,
         @NotBlank @Pattern(regexp = "\\d{5}-?\\d{3}", message = "CEP deve ter 8 dígitos") String cep,
         @NotNull TipoConta tipo,
-        @NotNull @PositiveOrZero @Digits(integer = 13, fraction = 2) BigDecimal saldoInicial
+        @NotNull @PositiveOrZero @Digits(integer = 13, fraction = 2) BigDecimal saldoInicial,
+        @NotBlank @Size(min = 8, max = 64) String senha
 ) {
+
+    @Override
+    public String toString() {
+        return "CriarContaRequest[titular=" + titular + ", cpf=" + cpf + ", email=" + email
+                + ", cep=" + cep + ", tipo=" + tipo + ", saldoInicial=" + saldoInicial + ", senha=***]";
+    }
 }

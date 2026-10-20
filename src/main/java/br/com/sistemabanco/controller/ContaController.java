@@ -40,7 +40,8 @@ public class ContaController {
                 request.saldoInicial(),
                 request.cpf(),
                 request.email(),
-                request.cep()
+                request.cep(),
+                request.senha()
         );
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()

@@ -20,16 +20,18 @@ public class ContaService {
 
     private final ContaDAO contaDAO;
     private final CepService cepService;
+    private final RegistroDeConta registroDeConta;
 
-    public ContaService(ContaDAO contaDAO, CepService cepService) {
-        if (contaDAO == null || cepService == null) {
+    public ContaService(ContaDAO contaDAO, CepService cepService, RegistroDeConta registroDeConta) {
+        if (contaDAO == null || cepService == null || registroDeConta == null) {
             throw new IllegalArgumentException("As dependências do serviço não podem ser nulas.");
         }
         this.contaDAO = contaDAO;
         this.cepService = cepService;
+        this.registroDeConta = registroDeConta;
     }
 
-    public ContaBancaria criarConta(TipoConta tipo, String titular, BigDecimal saldo, String cpf, String email, String cep) {
+    public ContaBancaria criarConta(TipoConta tipo, String titular, BigDecimal saldo, String cpf, String email, String cep, String senha) {
         String cpfNormalizado = validarCpf(cpf);
         if (contaDAO.buscarPorCpf(cpfNormalizado).isPresent()) {
             throw new CpfJaCadastradoException("Já existe uma conta cadastrada para o CPF: " + cpfNormalizado);
@@ -37,7 +39,7 @@ public class ContaService {
         Endereco endereco = cepService.buscarEnderecoPorCep(cep);
         ContaBancaria conta = ContaFactory.criarConta(tipo, titular, saldo, cpfNormalizado, email, endereco);
         conta.registrarAbertura();
-        contaDAO.salvar(conta);
+        registroDeConta.registrar(conta, senha);
         return conta;
     }
 

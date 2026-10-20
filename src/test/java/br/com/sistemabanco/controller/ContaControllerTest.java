@@ -58,14 +58,14 @@ class ContaControllerTest {
     @Test
     void deveCriarContaERetornar201ComLocation() throws Exception {
         when(contaService.criarConta(eq(TipoConta.CORRENTE), eq("Maria Souza"), any(BigDecimal.class),
-                eq(CPF), eq("maria@email.com"), eq("01001000")))
+                eq(CPF), eq("maria@email.com"), eq("01001000"), eq("Senha#1234")))
                 .thenReturn(conta("100.00"));
 
         mockMvc.perform(post("/contas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
-                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00}
+                                    "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "http://localhost/contas/" + CPF))
@@ -93,7 +93,7 @@ class ContaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"Maria Souza","cpf":"11111111111","email":"maria@email.com",
-                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00}
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00","senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -185,5 +185,18 @@ class ContaControllerTest {
     private ContaBancaria conta(String saldo) {
         Endereco endereco = new Endereco("01001000", "Praca da Se", "Se", "Sao Paulo", "SP");
         return new ContaCorrente("Maria Souza", new BigDecimal(saldo), CPF, "maria@email.com", endereco);
+    }
+
+    @Test
+    void deveRejeitarCriacaoComSenhaCurta() throws Exception {
+        mockMvc.perform(post("/contas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"123"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(contaService);
     }
 }

@@ -45,7 +45,7 @@ class RestExceptionHandlerTest {
 
     private static final String CORPO_CRIAR_CONTA = """
             {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
-             "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00}
+             "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
             """;
 
     @Mock
@@ -139,7 +139,7 @@ class RestExceptionHandlerTest {
 
     @Test
     void deveRetornar409QuandoOCpfJaEstaCadastrado() throws Exception {
-        when(contaService.criarConta(any(), any(), any(), any(), any(), any()))
+        when(contaService.criarConta(any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new CpfJaCadastradoException("Já existe uma conta cadastrada para o CPF: " + CPF));
 
         mockMvc.perform(post("/contas")
@@ -211,7 +211,7 @@ class RestExceptionHandlerTest {
 
     @Test
     void deveRetornar502SemVazarDetalhesInternosDoServicoDeCep() throws Exception {
-        when(contaService.criarConta(any(), any(), any(), any(), any(), any()))
+        when(contaService.criarConta(any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new ServicoCepException("timeout em http://interno:8080/segredo",
                         new RuntimeException("causa")));
 
