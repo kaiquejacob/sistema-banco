@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -42,6 +43,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RestExceptionHandlerTest {
 
     private static final String CPF = "12345678909";
+
+    // Simula o cliente logado: em produção o Spring Security preenche o Principal.
+    private static final Principal CLIENTE = () -> CPF;
 
     private static final String CORPO_CRIAR_CONTA = """
             {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
@@ -74,7 +78,8 @@ class RestExceptionHandlerTest {
         doThrow(new IllegalArgumentException("O valor do depósito deve ser positivo."))
                 .when(contaService).depositar(eq(CPF), any(BigDecimal.class));
 
-        mockMvc.perform(post("/contas/{cpf}/depositos", CPF)
+        mockMvc.perform(post("/contas/me/depositos")
+                        .principal(CLIENTE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":50.00}"))
                 .andExpect(status().isBadRequest())
@@ -87,7 +92,7 @@ class RestExceptionHandlerTest {
         when(contaService.buscarConta("123"))
                 .thenThrow(new CpfInvalidoException("CPF inválido: 123"));
 
-        mockMvc.perform(get("/contas/{cpf}", "123"))
+        mockMvc.perform(get("/contas/admin/{cpf}", "123"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.detail").value("CPF inválido: 123"));
@@ -99,7 +104,7 @@ class RestExceptionHandlerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"","cpf":"12345678909","email":"maria@email.com",
-                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00}
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Requisição inválida"))
@@ -127,7 +132,7 @@ class RestExceptionHandlerTest {
         when(contaService.buscarConta(CPF))
                 .thenThrow(new ContaNaoEncontradaException("Conta não encontrada para o CPF: " + CPF));
 
-        mockMvc.perform(get("/contas/{cpf}", CPF))
+        mockMvc.perform(get("/contas/me").principal(CLIENTE))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(404))
@@ -173,7 +178,8 @@ class RestExceptionHandlerTest {
         doThrow(new ConflitoConcorrenciaException("A conta foi alterada por outra operação."))
                 .when(contaService).depositar(eq(CPF), any(BigDecimal.class));
 
-        mockMvc.perform(post("/contas/{cpf}/depositos", CPF)
+        mockMvc.perform(post("/contas/me/depositos")
+                        .principal(CLIENTE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":50.00}"))
                 .andExpect(status().isConflict());
@@ -185,9 +191,10 @@ class RestExceptionHandlerTest {
                 .when(contaService).transferir(eq(CPF), any(), any(BigDecimal.class));
 
         mockMvc.perform(post("/transferencias")
+                        .principal(CLIENTE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"cpfOrigem":"12345678909","cpfDestino":"11144477735","valor":10.00}
+                                {"cpfDestino":"11144477735","valor":10.00}
                                 """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(not(containsString("deadlock"))));
@@ -200,7 +207,8 @@ class RestExceptionHandlerTest {
         doThrow(new SaldoInsuficienteException("Saldo insuficiente. Saldo atual: R$10, valor solicitado: R$50.00"))
                 .when(contaService).sacar(eq(CPF), any(BigDecimal.class));
 
-        mockMvc.perform(post("/contas/{cpf}/saques", CPF)
+        mockMvc.perform(post("/contas/me/saques")
+                        .principal(CLIENTE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":50.00}"))
                 .andExpect(status().is(422))
@@ -228,10 +236,9 @@ class RestExceptionHandlerTest {
         when(contaService.buscarConta(CPF))
                 .thenThrow(new RuntimeException("senha do banco: 12345"));
 
-        mockMvc.perform(get("/contas/{cpf}", CPF))
+        mockMvc.perform(get("/contas/me").principal(CLIENTE))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.title").value("Erro interno"))
                 .andExpect(jsonPath("$.detail").value(not(containsString("senha"))));
     }
-
 }

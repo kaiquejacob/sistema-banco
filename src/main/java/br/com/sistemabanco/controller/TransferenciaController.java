@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/transferencias")
 public class TransferenciaController {
@@ -20,8 +22,8 @@ public class TransferenciaController {
     }
 
     @PostMapping
-    public ContaResponse transferir(@Valid @RequestBody TransferenciaRequest request) {
-        contaService.transferir(request.cpfOrigem(), request.cpfDestino(), request.valor());
-        return ContaResponse.de(contaService.buscarConta(request.cpfOrigem()));
+    public ContaResponse transferir(Principal principal, @Valid @RequestBody TransferenciaRequest request) {
+        contaService.transferir(principal.getName(), request.cpfDestino(), request.valor());
+        return ContaResponse.de(contaService.buscarConta(principal.getName()));
     }
 }

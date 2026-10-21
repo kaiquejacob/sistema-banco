@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +38,9 @@ class ContaControllerTest {
 
     private static final String CPF = "12345678909";
 
+    // Simula o cliente logado: em produção o Spring Security preenche o Principal.
+    private static final Principal CLIENTE = () -> CPF;
+
     @Mock
     private ContaService contaService;
 
@@ -55,6 +59,8 @@ class ContaControllerTest {
                 .build();
     }
 
+    // ---- cadastro (público) ----
+
     @Test
     void deveCriarContaERetornar201ComLocation() throws Exception {
         when(contaService.criarConta(eq(TipoConta.CORRENTE), eq("Maria Souza"), any(BigDecimal.class),
@@ -65,10 +71,10 @@ class ContaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
-                                    "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/contas/" + CPF))
+                .andExpect(header().string("Location", "http://localhost/contas/me"))
                 .andExpect(jsonPath("$.cpf").value(CPF))
                 .andExpect(jsonPath("$.tipo").value("CORRENTE"))
                 .andExpect(jsonPath("$.saldo").value(100.00));
@@ -80,7 +86,7 @@ class ContaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"","cpf":"12345678909","email":"maria@email.com",
-                                 "cep":"123","tipo":"CORRENTE","saldoInicial":-1}
+                                 "cep":"123","tipo":"CORRENTE","saldoInicial":-1,"senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -93,12 +99,107 @@ class ContaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"titular":"Maria Souza","cpf":"11111111111","email":"maria@email.com",
-                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00","senha":"Senha#1234"}
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"Senha#1234"}
                                 """))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(contaService);
     }
+
+    @Test
+    void deveRejeitarCriacaoComSenhaCurta() throws Exception {
+        mockMvc.perform(post("/contas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
+                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"123"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(contaService);
+    }
+
+    // ---- cliente: o CPF vem do Principal ----
+
+    @Test
+    void deveMostrarAMinhaConta() throws Exception {
+        when(contaService.buscarConta(CPF)).thenReturn(conta("500.00"));
+
+        mockMvc.perform(get("/contas/me").principal(CLIENTE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titular").value("Maria Souza"))
+                .andExpect(jsonPath("$.saldo").value(500.00));
+    }
+
+    @Test
+    void deveDepositarNaMinhaContaERetornarContaAtualizada() throws Exception {
+        when(contaService.buscarConta(CPF)).thenReturn(conta("150.00"));
+
+        mockMvc.perform(post("/contas/me/depositos")
+                        .principal(CLIENTE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":50.00}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saldo").value(150.00));
+
+        verify(contaService).depositar(eq(CPF), any(BigDecimal.class));
+    }
+
+    @Test
+    void deveRejeitarDepositoComValorNaoPositivo() throws Exception {
+        mockMvc.perform(post("/contas/me/depositos")
+                        .principal(CLIENTE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":-5}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(contaService);
+    }
+
+    @Test
+    void deveSacarDaMinhaConta() throws Exception {
+        when(contaService.buscarConta(CPF)).thenReturn(conta("80.00"));
+
+        mockMvc.perform(post("/contas/me/saques")
+                        .principal(CLIENTE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":20.00}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saldo").value(80.00));
+
+        verify(contaService).sacar(eq(CPF), any(BigDecimal.class));
+    }
+
+    @Test
+    void deveMostrarMeuExtratoEstruturado() throws Exception {
+        ContaBancaria conta = conta("100.00");
+        conta.depositar(new BigDecimal("50.00"));
+        when(contaService.buscarConta(CPF)).thenReturn(conta);
+
+        mockMvc.perform(get("/contas/me/extrato").principal(CLIENTE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.endereco.cidade").value("Sao Paulo"))
+                .andExpect(jsonPath("$.transacoes[0].tipo").value("DEPOSITO"))
+                .andExpect(jsonPath("$.detalhes.saquesGratuitosRestantes").value(2));
+    }
+
+    @Test
+    void deveTransferirUsandoOClienteLogadoComoOrigem() throws Exception {
+        when(contaService.buscarConta(CPF)).thenReturn(conta("900.00"));
+
+        mockMvc.perform(post("/transferencias")
+                        .principal(CLIENTE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"cpfDestino":"11144477735","valor":100.00}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saldo").value(900.00));
+
+        verify(contaService).transferir(eq(CPF), eq("11144477735"), any(BigDecimal.class));
+    }
+
+    // ---- admin ----
 
     @Test
     void deveListarContasPaginadas() throws Exception {
@@ -114,64 +215,12 @@ class ContaControllerTest {
     }
 
     @Test
-    void deveBuscarConta() throws Exception {
+    void deveConsultarContaPorCpfComoAdmin() throws Exception {
         when(contaService.buscarConta(CPF)).thenReturn(conta("500.00"));
 
-        mockMvc.perform(get("/contas/{cpf}", CPF))
+        mockMvc.perform(get("/contas/admin/{cpf}", CPF))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.titular").value("Maria Souza"))
-                .andExpect(jsonPath("$.saldo").value(500.00));
-    }
-
-    @Test
-    void deveDepositarERetornarContaAtualizada() throws Exception {
-        when(contaService.buscarConta(CPF)).thenReturn(conta("150.00"));
-
-        mockMvc.perform(post("/contas/{cpf}/depositos", CPF)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"valor\":50.00}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.saldo").value(150.00));
-
-        verify(contaService).depositar(eq(CPF), any(BigDecimal.class));
-    }
-
-    @Test
-    void deveRejeitarDepositoComValorNaoPositivo() throws Exception {
-        mockMvc.perform(post("/contas/{cpf}/depositos", CPF)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"valor\":-5}"))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(contaService);
-    }
-
-    @Test
-    void deveMostrarExtratoEstruturado() throws Exception {
-        ContaBancaria conta = conta("100.00");
-        conta.depositar(new BigDecimal("50.00"));
-        when(contaService.buscarConta(CPF)).thenReturn(conta);
-
-        mockMvc.perform(get("/contas/{cpf}/extrato", CPF))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.endereco.cidade").value("Sao Paulo"))
-                .andExpect(jsonPath("$.transacoes[0].tipo").value("DEPOSITO"))
-                .andExpect(jsonPath("$.detalhes.saquesGratuitosRestantes").value(2));
-    }
-
-    @Test
-    void deveTransferirERetornarContaDeOrigem() throws Exception {
-        when(contaService.buscarConta(CPF)).thenReturn(conta("900.00"));
-
-        mockMvc.perform(post("/transferencias")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"cpfOrigem":"12345678909","cpfDestino":"11144477735","valor":100.00}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.saldo").value(900.00));
-
-        verify(contaService).transferir(eq(CPF), eq("11144477735"), any(BigDecimal.class));
+                .andExpect(jsonPath("$.cpf").value(CPF));
     }
 
     @Test
@@ -182,21 +231,19 @@ class ContaControllerTest {
         verify(contaService).removerConta(CPF);
     }
 
+    @Test
+    void deveCobrarTaxaDeManutencao() throws Exception {
+        when(contaService.buscarConta(CPF)).thenReturn(conta("988.00"));
+
+        mockMvc.perform(post("/contas/admin/{cpf}/taxa-manutencao", CPF))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saldo").value(988.00));
+
+        verify(contaService).cobrarTaxaManutencao(CPF);
+    }
+
     private ContaBancaria conta(String saldo) {
         Endereco endereco = new Endereco("01001000", "Praca da Se", "Se", "Sao Paulo", "SP");
         return new ContaCorrente("Maria Souza", new BigDecimal(saldo), CPF, "maria@email.com", endereco);
-    }
-
-    @Test
-    void deveRejeitarCriacaoComSenhaCurta() throws Exception {
-        mockMvc.perform(post("/contas")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"titular":"Maria Souza","cpf":"12345678909","email":"maria@email.com",
-                                 "cep":"01001000","tipo":"CORRENTE","saldoInicial":100.00,"senha":"123"}
-                                """))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(contaService);
     }
 }

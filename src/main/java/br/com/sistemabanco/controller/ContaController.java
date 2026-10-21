@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/contas")
@@ -31,6 +32,8 @@ public class ContaController {
     public ContaController(ContaService contaService) {
         this.contaService = contaService;
     }
+
+    // ---- Público: cadastro ----
 
     @PostMapping
     public ResponseEntity<ContaResponse> criar(@Valid @RequestBody CriarContaRequest request) {
@@ -45,12 +48,38 @@ public class ContaController {
         );
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{cpf}")
-                .buildAndExpand(conta.getCpf())
+                .path("/me")
+                .build()
                 .toUri();
 
         return ResponseEntity.created(location).body(ContaResponse.de(conta));
     }
+
+    // ---- Cliente: o CPF vem do login, nunca da URL nem do corpo ----
+
+    @GetMapping("/me")
+    public ContaResponse minhaConta(Principal principal) {
+        return ContaResponse.de(contaService.buscarConta(principal.getName()));
+    }
+
+    @GetMapping("/me/extrato")
+    public ExtratoResponse meuExtrato(Principal principal) {
+        return ExtratoMapper.de(contaService.buscarConta(principal.getName()));
+    }
+
+    @PostMapping("/me/depositos")
+    public ContaResponse depositar(Principal principal, @Valid @RequestBody ValorRequest request) {
+        contaService.depositar(principal.getName(), request.valor());
+        return ContaResponse.de(contaService.buscarConta(principal.getName()));
+    }
+
+    @PostMapping("/me/saques")
+    public ContaResponse sacar(Principal principal, @Valid @RequestBody ValorRequest request) {
+        contaService.sacar(principal.getName(), request.valor());
+        return ContaResponse.de(contaService.buscarConta(principal.getName()));
+    }
+
+    // ---- Admin ----
 
     @GetMapping
     public PaginaResponse<ContaResponse> listar(
@@ -60,26 +89,14 @@ public class ContaController {
         return PaginaResponse.de(contaService.listarPorSaldo(pagina, tamanho));
     }
 
-    @GetMapping("/{cpf}")
+    @GetMapping("/admin/{cpf}")
     public ContaResponse buscar(@PathVariable String cpf) {
         return ContaResponse.de(contaService.buscarConta(cpf));
     }
 
-    @GetMapping("/{cpf}/extrato")
+    @GetMapping("/admin/{cpf}/extrato")
     public ExtratoResponse extrato(@PathVariable String cpf) {
         return ExtratoMapper.de(contaService.buscarConta(cpf));
-    }
-
-    @PostMapping("/{cpf}/depositos")
-    public ContaResponse depositar(@PathVariable String cpf, @Valid @RequestBody ValorRequest request) {
-        contaService.depositar(cpf, request.valor());
-        return ContaResponse.de(contaService.buscarConta(cpf));
-    }
-
-    @PostMapping("/{cpf}/saques")
-    public ContaResponse sacar(@PathVariable String cpf, @Valid @RequestBody ValorRequest request) {
-        contaService.sacar(cpf, request.valor());
-        return ContaResponse.de(contaService.buscarConta(cpf));
     }
 
     @DeleteMapping("/admin/{cpf}")
