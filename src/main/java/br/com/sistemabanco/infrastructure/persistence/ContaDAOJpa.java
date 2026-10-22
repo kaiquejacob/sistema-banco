@@ -150,7 +150,11 @@ public class ContaDAOJpa implements ContaDAO {
             );
         }
 
-        contaRepository.findById(cpf).ifPresent(contaRepository::delete);
+        contaRepository.findById(cpf).ifPresent(conta -> {
+            enderecoRepository.findByConta_Cpf(cpf)
+                    .ifPresent(enderecoRepository::delete);
+            contaRepository.delete(conta);
+        });
     }
 
     @Override
