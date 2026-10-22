@@ -1,4 +1,4 @@
-package br.com.sistemabanco.mapper;
+package br.com.sistemabanco.presentation.mapper;
 
 import br.com.sistemabanco.domain.model.ContaBancaria;
 import br.com.sistemabanco.domain.model.ContaCorrente;

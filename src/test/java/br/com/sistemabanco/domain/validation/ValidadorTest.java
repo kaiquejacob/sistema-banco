@@ -1,4 +1,4 @@
-package br.com.sistemabanco;
+package br.com.sistemabanco.domain.validation;
 
 import br.com.sistemabanco.domain.util.Validador;
 import org.junit.jupiter.api.Test;

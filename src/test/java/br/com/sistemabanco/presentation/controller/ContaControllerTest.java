@@ -1,4 +1,4 @@
-package br.com.sistemabanco.controller;
+package br.com.sistemabanco.presentation.controller;
 
 import br.com.sistemabanco.application.ContaService;
 import br.com.sistemabanco.domain.model.ContaBancaria;

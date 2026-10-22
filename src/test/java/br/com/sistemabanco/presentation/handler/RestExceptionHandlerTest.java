@@ -1,4 +1,4 @@
-package br.com.sistemabanco.handler;
+package br.com.sistemabanco.presentation.handler;
 
 import br.com.sistemabanco.application.ContaService;
 import br.com.sistemabanco.presentation.controller.ContaController;

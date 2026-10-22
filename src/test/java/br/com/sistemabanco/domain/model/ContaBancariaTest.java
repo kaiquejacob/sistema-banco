@@ -1,10 +1,6 @@
-package br.com.sistemabanco;
+package br.com.sistemabanco.domain.model;
 
 import br.com.sistemabanco.domain.exception.SaldoInsuficienteException;
-import br.com.sistemabanco.domain.model.ContaCorrente;
-import br.com.sistemabanco.domain.model.Endereco;
-import br.com.sistemabanco.domain.model.TipoTransacao;
-import br.com.sistemabanco.domain.model.Transacao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

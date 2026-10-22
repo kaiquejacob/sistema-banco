@@ -1,4 +1,4 @@
-package br.com.sistemabanco;
+package br.com.sistemabanco.integration;
 
 import br.com.sistemabanco.application.ContaService;
 import br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException;

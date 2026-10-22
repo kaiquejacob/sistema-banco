@@ -1,4 +1,4 @@
-package br.com.sistemabanco;
+package br.com.sistemabanco.application;
 
 import br.com.sistemabanco.domain.exception.ContaComSaldoException;
 import br.com.sistemabanco.domain.exception.ContaNaoEncontradaException;
@@ -6,8 +6,6 @@ import br.com.sistemabanco.domain.exception.SaldoInsuficienteException;
 import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
-import br.com.sistemabanco.application.ContaService;
-import br.com.sistemabanco.application.RegistroDeConta;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
