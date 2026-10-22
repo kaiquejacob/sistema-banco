@@ -31,14 +31,15 @@ API REST de sistema bancário desenvolvida em **Java 25** com **Spring Boot 4**,
 
 O sistema permite:
 
-- 🏦 **Cadastro de contas** corrente, poupança e investimento.
-- 💰 **Depósitos e saques** com regras de negócio, taxas e histórico de transações.
-- 🔁 **Transferências** entre contas, com débito e crédito em uma única transação.
+- 🏦 **Cadastro de contas** corrente, poupança e investimento, com endereço preenchido automaticamente via **ViaCEP**.
+- 💰 **Depósitos e saques** com limite diário por tipo de conta, franquia de saques, taxas e histórico de transações.
+- 🔁 **Transferências** entre contas, com débito e crédito na mesma transação de banco.
 - 🔐 **Autenticação HTTP Basic** com usuários `CLIENTE` e `ADMIN`.
 - 🧾 **Extrato** e consulta da própria conta por meio de rotas `/me`.
-- 🛡️ **Controle de acesso** por papel, impedindo que um cliente opere a conta de outro usuário.
+- 🛡️ **Controle de acesso** por papel: o CPF do cliente vem sempre do login, nunca da URL ou do corpo da requisição.
+- ⚙️ **Controle de concorrência** com lock otimista (`@Version`).
 - 📈 **Observabilidade** com Actuator, Prometheus e Grafana.
-- 📘 **Documentação interativa** com OpenAPI/Swagger.
+- 📘 **Documentação interativa** com OpenAPI/Swagger (perfil `dev`).
 
 Os dados são persistidos em **MySQL**, estruturados sob princípios de **Domain-Driven Design (DDD)** e arquitetura em camadas.
 
@@ -55,7 +56,7 @@ Os dados são persistidos em **MySQL**, estruturados sob princípios de **Domain
                                       ▼
                  ┌──────────────────────────────────────────┐
                  │              PRESENTATION                │
-                 │  Controllers · DTOs · Validation · Errors │
+                 │ Controllers · DTOs · Validation · Errors │
                  └────────────────────┬─────────────────────┘
                                       │
                                       ▼
@@ -95,9 +96,9 @@ SISTEMA DE BANCO (SPRING BOOT 4 + JAVA 25)
 [✓] Autenticação e autorização com Spring Security
 [✓] HTTP Basic stateless com papéis CLIENTE e ADMIN
 [✓] Senhas armazenadas com BCrypt
-[✓] Validação de entrada com Bean Validation
+[✓] Validação de entrada com Bean Validation e validador de CPF próprio
 [✓] Tratamento de erros com ProblemDetail (RFC 9457)
-[✓] Integração externa com ViaCEP
+[✓] Integração externa com ViaCEP (timeouts configurados e cache em memória)
 [✓] Documentação OpenAPI e Swagger UI
 [✓] Observabilidade com Actuator, Micrometer, Prometheus e Grafana
 [✓] Testes unitários, de integração e de concorrência com JUnit 5
@@ -109,19 +110,58 @@ SISTEMA DE BANCO (SPRING BOOT 4 + JAVA 25)
 
 | Operação | Método / Endpoint | Acesso | Descrição |
 |---|---|---|---|
-| 🏦 **Criar conta** | `POST /contas` | Público | Cadastra conta, endereço e credencial de acesso |
+| 🏦 **Criar conta** | `POST /contas` | Público | Cadastra conta, endereço (via CEP) e credencial de acesso |
 | 👤 **Minha conta** | `GET /contas/me` | `CLIENTE` | Retorna os dados da conta autenticada |
-| 📝 **Meu extrato** | `GET /contas/me/extrato` | `CLIENTE` | Retorna o histórico de transações |
+| 📝 **Meu extrato** | `GET /contas/me/extrato` | `CLIENTE` | Retorna o histórico de transações e os detalhes do tipo de conta |
 | 💰 **Depositar** | `POST /contas/me/depositos` | `CLIENTE` | Realiza depósito na conta autenticada |
 | 🏧 **Sacar** | `POST /contas/me/saques` | `CLIENTE` | Realiza saque na conta autenticada |
 | 🔁 **Transferir** | `POST /transferencias` | `CLIENTE` | Transfere da conta autenticada para outra conta |
-| 📊 **Listar contas** | `GET /contas` | `ADMIN` | Lista contas paginadas e ordenadas por saldo |
+| 📊 **Listar contas** | `GET /contas?pagina=0&tamanho=20` | `ADMIN` | Lista contas ordenadas por saldo (tamanho máximo: 100) |
 | 🔍 **Buscar conta** | `GET /contas/admin/{cpf}` | `ADMIN` | Consulta uma conta pelo CPF |
 | 🧾 **Extrato por CPF** | `GET /contas/admin/{cpf}/extrato` | `ADMIN` | Consulta o extrato de qualquer conta |
-| ❌ **Remover conta** | `DELETE /contas/admin/{cpf}` | `ADMIN` | Remove uma conta sem histórico |
-| 💸 **Cobrar taxa** | `POST /contas/admin/{cpf}/taxa-manutencao` | `ADMIN` | Cobra a taxa de manutenção da conta |
+| ❌ **Remover conta** | `DELETE /contas/admin/{cpf}` | `ADMIN` | Remove uma conta sem histórico e com saldo zerado |
+| 💸 **Cobrar taxa** | `POST /contas/admin/{cpf}/taxa-manutencao` | `ADMIN` | Cobra a taxa de manutenção do tipo de conta |
 | ❤️ **Health check** | `GET /actuator/health` | Público | Verifica o estado da aplicação |
 | 📈 **Métricas** | `GET /actuator/prometheus` | `ADMIN` | Expõe métricas para o Prometheus |
+| 📘 **Swagger UI** | `GET /swagger-ui.html` | Apenas perfil `dev` | Documentação interativa |
+
+---
+
+## `REGRAS DE NEGÓCIO`
+
+| Tipo de conta | Taxa de manutenção | Limite diário de saque | Particularidades |
+|---|---|---|---|
+| **Corrente** | R$ 12,00 | R$ 2.000,00 | 2 saques gratuitos por mês; a partir do 3º, taxa de R$ 10,00 por saque |
+| **Poupança** | Isenta | R$ 1.000,00 | Rendimento mensal estimado de 0,5% do saldo |
+| **Investimento** | R$ 25,00 | R$ 5.000,00 | Rendimento mensal estimado de 1,2% do saldo e taxa de administração de R$ 20,00 exibida no extrato |
+
+Regras gerais:
+
+```text
+[✓] A taxa de saque é registrada como transação separada e não consome o limite diário
+[✓] Se o saldo não cobre saque + taxa, nada é debitado
+[✓] Transferências não consomem a franquia de saques nem o limite diário
+[✓] Transferência para a própria conta é rejeitada
+[✓] Conta só pode ser removida se tiver saldo zerado e nenhuma transação
+[✓] Abertura de conta com saldo inicial gera a transação ABERTURA_CONTA
+```
+
+---
+
+## `TRATAMENTO DE ERROS`
+
+Os erros seguem o formato `ProblemDetail` (RFC 9457). Mensagens internas (banco, ViaCEP, exceções inesperadas) nunca são devolvidas ao cliente; ficam apenas no log.
+
+| Status | Quando acontece |
+|---|---|
+| `400` | Validação de campos, CPF ou e-mail inválido, valor inválido |
+| `401` / `403` | Sem credencial, senha incorreta ou papel sem permissão |
+| `404` | Conta não encontrada |
+| `409` | CPF já cadastrado, conta com saldo ou histórico, conflito de concorrência ou lock |
+| `422` | Saldo insuficiente ou limite diário de saque excedido |
+| `502` | Falha ao consultar o ViaCEP |
+| `503` | Banco de dados indisponível |
+| `500` | Erro inesperado (mensagem genérica) |
 
 ---
 
@@ -133,11 +173,12 @@ A API utiliza **HTTP Basic** com sessão stateless.
 [✓] Cadastro público apenas para criação de conta
 [✓] CLIENTE acessa somente a própria conta por /contas/me
 [✓] ADMIN acessa listagem, consulta, exclusão e taxa de manutenção
-[✓] Rotas não mapeadas são negadas por padrão
+[✓] Rotas não mapeadas são negadas por padrão (denyAll)
 [✓] Senhas armazenadas com BCrypt
 [✓] Mensagem idêntica para usuário inexistente e senha incorreta
-[✓] Seed de administrador controlado por variável de ambiente
+[✓] Administrador criado no primeiro start, a partir de variável de ambiente
 [✓] CSRF desativado por ser uma API stateless sem cookies
+[✓] Swagger liberado apenas no perfil dev
 ```
 
 > **Limitação:** HTTP Basic envia credenciais em todas as requisições. Em produção, a API deve ser exposta exclusivamente por HTTPS.
@@ -152,7 +193,33 @@ A API utiliza **HTTP Basic** com sessão stateless.
 - **Maven 3.9+**
 - **Docker** e **Docker Compose**
 
-### 2. Subir a infraestrutura
+### 2. Variáveis de ambiente
+
+| Variável | Descrição | Padrão |
+|---|---|---|
+| `ADMIN_PASSWORD` | Senha do usuário `admin` (mínimo de 8 caracteres). Sem ela, o administrador não é criado. | — |
+| `DB_URL` | URL de conexão com o MySQL | `jdbc:mysql://localhost:3307/banco_db` |
+| `DB_USER` | Usuário do banco | `root` |
+| `DB_PASSWORD` | Senha do banco (também usada como senha root no Docker Compose) | `root` |
+| `GRAFANA_USER` / `GRAFANA_PASSWORD` | Credenciais do Grafana | `admin` / `admin` |
+
+> Os padrões `root/root` e `admin/admin` existem apenas para desenvolvimento local. Em qualquer outro ambiente, defina valores próprios.
+
+### 3. Configurar a senha do Prometheus
+
+O endpoint `/actuator/prometheus` exige o usuário `admin`, então o Prometheus precisa da senha dele. Ela é lida de um arquivo ignorado pelo Git, e nunca fica escrita no `prometheus.yml`:
+
+```bash
+# Linux/macOS
+mkdir -p secrets
+printf '%s' "$ADMIN_PASSWORD" > secrets/prometheus_admin_password
+
+# Windows PowerShell
+New-Item -ItemType Directory -Force secrets | Out-Null
+Set-Content -NoNewline -Path secrets/prometheus_admin_password -Value $env:ADMIN_PASSWORD
+```
+
+### 4. Subir a infraestrutura
 
 ```bash
 docker compose up -d db prometheus grafana
@@ -160,7 +227,14 @@ docker compose up -d db prometheus grafana
 
 O MySQL será iniciado na porta `3307`, o Prometheus em `9090` e o Grafana em `3000`.
 
-### 3. Configurar a senha do administrador
+O `schema.sql` cria as tabelas na **primeira** inicialização do volume do MySQL (a aplicação usa `ddl-auto: validate`, então o schema precisa existir). Para recriar o banco do zero:
+
+```bash
+docker compose down -v
+docker compose up -d db prometheus grafana
+```
+
+### 5. Configurar a senha do administrador
 
 ```bash
 # Linux/macOS
@@ -170,9 +244,9 @@ export ADMIN_PASSWORD=SuaSenhaForte#1
 $env:ADMIN_PASSWORD="SuaSenhaForte#1"
 ```
 
-O administrador será criado automaticamente no primeiro start, caso ainda não exista.
+O administrador (`admin`) é criado automaticamente no primeiro start, caso ainda não exista.
 
-### 4. Executar a aplicação
+### 6. Executar a aplicação
 
 ```bash
 mvn spring-boot:run
@@ -180,7 +254,7 @@ mvn spring-boot:run
 
 A API estará disponível em: `http://localhost:8080`.
 
-### 5. Executar com Swagger
+### 7. Executar com Swagger
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
@@ -194,9 +268,59 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
+<details>
+<summary><strong>💡 Exemplos de requisição (cURL)</strong></summary>
+
+<br>
+
+#### Criar conta (público)
+```bash
+curl -X POST http://localhost:8080/contas \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titular": "Maria Souza",
+    "cpf": "52998224725",
+    "email": "maria@example.com",
+    "cep": "01001000",
+    "tipo": "CORRENTE",
+    "saldoInicial": 100.00,
+    "senha": "SenhaForte#1"
+  }'
+```
+
+#### Consultar a própria conta (o login é o CPF)
+```bash
+curl -u 52998224725:SenhaForte#1 http://localhost:8080/contas/me
+```
+
+#### Depositar
+```bash
+curl -X POST http://localhost:8080/contas/me/depositos \
+  -u 52998224725:SenhaForte#1 \
+  -H "Content-Type: application/json" \
+  -d '{"valor": 250.00}'
+```
+
+#### Transferir
+```bash
+curl -X POST http://localhost:8080/transferencias \
+  -u 52998224725:SenhaForte#1 \
+  -H "Content-Type: application/json" \
+  -d '{"cpfDestino": "11144477735", "valor": 100.00}'
+```
+
+#### Listar contas (admin)
+```bash
+curl -u admin:SuaSenhaForte#1 "http://localhost:8080/contas?pagina=0&tamanho=20"
+```
+
+</details>
+
+---
+
 ## `TESTES AUTOMATIZADOS`
 
-O projeto inclui testes unitários, testes de repositório, testes de segurança, testes de concorrência e testes de integração ponta a ponta.
+O projeto inclui testes unitários, de repositório, de segurança, de concorrência e de integração ponta a ponta. Os testes usam **H2 em memória** (perfil `test`), então não precisam do MySQL.
 
 ```bash
 mvn test
@@ -205,17 +329,20 @@ mvn test
 Cenários cobertos:
 
 ```text
-[✓] Regras de depósito, saque, transferência e taxas
+[✓] Regras de depósito, saque, transferência, franquia de saques e taxas
+[✓] Limite diário de saque restaurado ao recarregar a conta do banco
 [✓] Criação de contas por tipo
 [✓] Persistência e consulta com JPA
-[✓] Rollback em falhas de transação
-[✓] Conflito de concorrência com lock otimista
+[✓] Rollback quando a segunda transação de uma transferência falha
+[✓] Conflito de concorrência com lock otimista (@Version)
+[✓] Transferências simultâneas sem perda de atualização
+[✓] Criação simultânea do mesmo CPF: uma vence e a outra recebe 409
 [✓] Autenticação HTTP Basic
 [✓] Autorização por CLIENTE e ADMIN
 [✓] Proteção contra acesso à conta de outro usuário
 [✓] Cadastro público e criação de credencial
-[✓] Tratamento global de erros
-[✓] Integração com ViaCEP
+[✓] Tratamento global de erros sem vazamento de mensagens internas
+[✓] Integração com ViaCEP (com cache e sem cachear falhas)
 ```
 
 ---
@@ -230,28 +357,28 @@ src/main/java/br/com/sistemabanco/
 │   ├── ContaService.java
 │   └── RegistroDeConta.java
 │
-├── domain/                   # Núcleo do negócio, sem dependência de framework
+├── domain/                   # Núcleo do negócio, sem dependência de framework web
 │   ├── exception/            # Exceções de negócio
 │   ├── factory/              # Criação de contas
 │   ├── model/                # ContaBancaria, Transacao, Endereco e tipos
 │   ├── repository/           # Portas: ContaDAO e CredencialDAO
 │   ├── service/              # Contrato do serviço de CEP
-│   └── validation/           # Validação de CPF
+│   └── util/                 # Validador (CPF, e-mail e nome)
 │
 ├── infrastructure/           # Detalhes técnicos e adaptadores externos
 │   ├── client/               # Integração com ViaCEP
 │   ├── config/               # Configurações de cliente e propriedades
 │   ├── openapi/              # Configuração do Swagger/OpenAPI
-│   ├── persistence/          # JPA, entidades, mappers e repositórios
+│   ├── persistence/          # JPA: entities, mappers e repositórios
 │   └── security/             # Usuários, papéis, BCrypt e Spring Security
 │
 └── presentation/             # Camada de entrada HTTP
     ├── controller/           # Controllers REST
     ├── handler/              # Tratamento global de erros
     ├── mapper/               # Conversão domínio -> DTO
-    ├── request/              # DTOs de entrada
-    ├── response/             # DTOs de saída
-    └── validation/           # Validações de payload
+    ├── requests/             # DTOs de entrada
+    ├── responses/            # DTOs de saída
+    └── validation/           # Anotação @Cpf e seu validador
 ```
 
 <details>
@@ -263,38 +390,42 @@ sistema-de-banco/
 │   ├── main/
 │   │   ├── java/br/com/sistemabanco/
 │   │   │   ├── application/
-│   │   │   │   ├── ContaService.java
-│   │   │   │   └── RegistroDeConta.java
 │   │   │   ├── domain/
 │   │   │   │   ├── exception/
 │   │   │   │   ├── factory/
 │   │   │   │   ├── model/
 │   │   │   │   ├── repository/
 │   │   │   │   ├── service/
-│   │   │   │   └── validation/
+│   │   │   │   └── util/
 │   │   │   ├── infrastructure/
 │   │   │   │   ├── client/
 │   │   │   │   ├── config/
 │   │   │   │   ├── openapi/
 │   │   │   │   ├── persistence/
+│   │   │   │   │   ├── entity/
+│   │   │   │   │   ├── mapper/
+│   │   │   │   │   └── repository/
 │   │   │   │   └── security/
-│   │   │   └── presentation/
-│   │   │       ├── controller/
-│   │   │       ├── handler/
-│   │   │       ├── mapper/
-│   │   │       ├── request/
-│   │   │       ├── response/
-│   │   │       └── validation/
+│   │   │   ├── presentation/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── handler/
+│   │   │   │   ├── mapper/
+│   │   │   │   ├── requests/
+│   │   │   │   ├── responses/
+│   │   │   │   └── validation/
+│   │   │   └── SistemaBancoApplication.java
 │   │   └── resources/
 │   │       ├── application.yml
 │   │       └── application-dev.yml
 │   └── test/
-│       └── java/br/com/sistemabanco/
-│           ├── application/
-│           ├── domain/
-│           ├── infrastructure/
-│           ├── integration/
-│           └── presentation/
+│       ├── java/br/com/sistemabanco/
+│       │   ├── application/
+│       │   ├── domain/
+│       │   ├── infrastructure/
+│       │   ├── integration/
+│       │   └── presentation/
+│       └── resources/
+│           └── application-test.yml
 ├── docker-compose.yml
 ├── prometheus.yml
 ├── pom.xml
@@ -314,18 +445,20 @@ A aplicação expõe métricas no formato Prometheus por meio do Actuator:
 http://localhost:8080/actuator/prometheus
 ```
 
-O Prometheus coleta as métricas periodicamente e o Grafana permite visualizá-las em dashboards.
+O Prometheus (rodando em container) coleta as métricas de `host.docker.internal:8080`, ou seja, da aplicação rodando na sua máquina, e o Grafana permite visualizá-las em dashboards. No Grafana, adicione o Prometheus como fonte de dados usando a URL `http://prometheus:9090`.
 
 | Serviço | URL |
 |---|---|
 | API | `http://localhost:8080` |
-| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| Swagger UI (perfil `dev`) | `http://localhost:8080/swagger-ui.html` |
 | Prometheus | `http://localhost:9090` |
 | Grafana | `http://localhost:3000` |
 
 ---
 
 ## `TECNOLOGIAS`
+
+<div align="center">
 
 <pre align="center">
 [SYSTEM STATUS]
