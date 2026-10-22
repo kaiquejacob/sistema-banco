@@ -1,4 +1,4 @@
-package br.com.sistemabanco.requests;
+package br.com.sistemabanco.presentation.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Digits;

@@ -1,4 +1,4 @@
-package br.com.sistemabanco.validation;
+package br.com.sistemabanco.presentation.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

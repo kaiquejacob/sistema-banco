@@ -1,8 +1,8 @@
-package br.com.sistemabanco.requests;
+package br.com.sistemabanco.presentation.requests;
 
 import br.com.sistemabanco.domain.model.TipoConta;
 import io.swagger.v3.oas.annotations.media.Schema;
-import br.com.sistemabanco.validation.Cpf;
+import br.com.sistemabanco.presentation.validation.Cpf;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -1,4 +1,4 @@
-package br.com.sistemabanco.responses;
+package br.com.sistemabanco.presentation.responses;
 
 import br.com.sistemabanco.domain.model.PaginaDeContas;
 

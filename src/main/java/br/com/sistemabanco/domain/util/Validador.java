@@ -1,4 +1,4 @@
-package br.com.sistemabanco.util;
+package br.com.sistemabanco.domain.util;
 
 import java.util.regex.Pattern;
 

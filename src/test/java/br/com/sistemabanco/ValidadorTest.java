@@ -1,6 +1,6 @@
 package br.com.sistemabanco;
 
-import br.com.sistemabanco.util.Validador;
+import br.com.sistemabanco.domain.util.Validador;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

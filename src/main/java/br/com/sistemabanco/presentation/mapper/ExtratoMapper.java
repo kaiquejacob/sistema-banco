@@ -1,14 +1,14 @@
-package br.com.sistemabanco.mapper;
+package br.com.sistemabanco.presentation.mapper;
 
 import br.com.sistemabanco.domain.model.ContaBancaria;
 import br.com.sistemabanco.domain.model.ContaCorrente;
 import br.com.sistemabanco.domain.model.ContaInvestimento;
 import br.com.sistemabanco.domain.model.ContaPoupanca;
 import br.com.sistemabanco.domain.model.Endereco;
-import br.com.sistemabanco.responses.DetalhesResponse;
-import br.com.sistemabanco.responses.EnderecoResponse;
-import br.com.sistemabanco.responses.ExtratoResponse;
-import br.com.sistemabanco.responses.TransacaoResponse;
+import br.com.sistemabanco.presentation.responses.DetalhesResponse;
+import br.com.sistemabanco.presentation.responses.EnderecoResponse;
+import br.com.sistemabanco.presentation.responses.ExtratoResponse;
+import br.com.sistemabanco.presentation.responses.TransacaoResponse;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

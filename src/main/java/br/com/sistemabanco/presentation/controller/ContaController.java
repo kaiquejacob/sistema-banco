@@ -1,13 +1,13 @@
-package br.com.sistemabanco.controller;
+package br.com.sistemabanco.presentation.controller;
 
 import br.com.sistemabanco.application.ContaService;
 import br.com.sistemabanco.domain.model.ContaBancaria;
-import br.com.sistemabanco.mapper.ExtratoMapper;
-import br.com.sistemabanco.requests.CriarContaRequest;
-import br.com.sistemabanco.requests.ValorRequest;
-import br.com.sistemabanco.responses.ContaResponse;
-import br.com.sistemabanco.responses.ExtratoResponse;
-import br.com.sistemabanco.responses.PaginaResponse;
+import br.com.sistemabanco.presentation.mapper.ExtratoMapper;
+import br.com.sistemabanco.presentation.requests.CriarContaRequest;
+import br.com.sistemabanco.presentation.requests.ValorRequest;
+import br.com.sistemabanco.presentation.responses.ContaResponse;
+import br.com.sistemabanco.presentation.responses.ExtratoResponse;
+import br.com.sistemabanco.presentation.responses.PaginaResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

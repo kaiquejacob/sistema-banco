@@ -1,8 +1,8 @@
-package br.com.sistemabanco.controller;
+package br.com.sistemabanco.presentation.controller;
 
 import br.com.sistemabanco.application.ContaService;
-import br.com.sistemabanco.requests.TransferenciaRequest;
-import br.com.sistemabanco.responses.ContaResponse;
+import br.com.sistemabanco.presentation.requests.TransferenciaRequest;
+import br.com.sistemabanco.presentation.responses.ContaResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

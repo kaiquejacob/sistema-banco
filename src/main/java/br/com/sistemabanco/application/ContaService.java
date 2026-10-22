@@ -8,7 +8,7 @@ import br.com.sistemabanco.domain.factory.ContaFactory;
 import br.com.sistemabanco.domain.model.*;
 import br.com.sistemabanco.domain.repository.ContaDAO;
 import br.com.sistemabanco.domain.service.CepService;
-import br.com.sistemabanco.util.Validador;
+import br.com.sistemabanco.domain.util.Validador;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

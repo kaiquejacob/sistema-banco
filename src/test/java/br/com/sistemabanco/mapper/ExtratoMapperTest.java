@@ -6,7 +6,8 @@ import br.com.sistemabanco.domain.model.ContaInvestimento;
 import br.com.sistemabanco.domain.model.ContaPoupanca;
 import br.com.sistemabanco.domain.model.Endereco;
 import br.com.sistemabanco.domain.model.TipoTransacao;
-import br.com.sistemabanco.responses.ExtratoResponse;
+import br.com.sistemabanco.presentation.mapper.ExtratoMapper;
+import br.com.sistemabanco.presentation.responses.ExtratoResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

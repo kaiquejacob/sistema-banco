@@ -1,7 +1,7 @@
-package br.com.sistemabanco.requests;
+package br.com.sistemabanco.presentation.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import br.com.sistemabanco.validation.Cpf;
+import br.com.sistemabanco.presentation.validation.Cpf;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

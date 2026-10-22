@@ -1,6 +1,6 @@
 package br.com.sistemabanco.infrastructure.security;
 
-import br.com.sistemabanco.util.Validador;
+import br.com.sistemabanco.domain.util.Validador;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

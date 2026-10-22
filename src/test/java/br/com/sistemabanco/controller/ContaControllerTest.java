@@ -7,6 +7,8 @@ import br.com.sistemabanco.domain.model.Endereco;
 import br.com.sistemabanco.domain.model.PaginaDeContas;
 import br.com.sistemabanco.domain.model.ResumoConta;
 import br.com.sistemabanco.domain.model.TipoConta;
+import br.com.sistemabanco.presentation.controller.ContaController;
+import br.com.sistemabanco.presentation.controller.TransferenciaController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

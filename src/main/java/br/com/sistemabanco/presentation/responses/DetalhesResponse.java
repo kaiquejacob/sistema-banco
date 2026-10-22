@@ -1,4 +1,4 @@
-package br.com.sistemabanco.responses;
+package br.com.sistemabanco.presentation.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

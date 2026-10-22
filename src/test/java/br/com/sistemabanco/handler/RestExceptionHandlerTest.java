@@ -1,8 +1,8 @@
 package br.com.sistemabanco.handler;
 
 import br.com.sistemabanco.application.ContaService;
-import br.com.sistemabanco.controller.ContaController;
-import br.com.sistemabanco.controller.TransferenciaController;
+import br.com.sistemabanco.presentation.controller.ContaController;
+import br.com.sistemabanco.presentation.controller.TransferenciaController;
 import br.com.sistemabanco.domain.exception.ConflitoConcorrenciaException;
 import br.com.sistemabanco.domain.exception.ContaComHistoricoException;
 import br.com.sistemabanco.domain.exception.ContaComSaldoException;
@@ -11,6 +11,7 @@ import br.com.sistemabanco.domain.exception.CpfInvalidoException;
 import br.com.sistemabanco.domain.exception.CpfJaCadastradoException;
 import br.com.sistemabanco.domain.exception.SaldoInsuficienteException;
 import br.com.sistemabanco.domain.exception.ServicoCepException;
+import br.com.sistemabanco.presentation.handler.RestExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

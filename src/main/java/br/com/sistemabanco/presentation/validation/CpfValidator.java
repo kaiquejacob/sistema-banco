@@ -1,6 +1,6 @@
-package br.com.sistemabanco.validation;
+package br.com.sistemabanco.presentation.validation;
 
-import br.com.sistemabanco.util.Validador;
+import br.com.sistemabanco.domain.util.Validador;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

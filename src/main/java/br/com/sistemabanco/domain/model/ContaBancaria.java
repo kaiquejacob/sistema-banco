@@ -1,6 +1,6 @@
 package br.com.sistemabanco.domain.model;
 
-import br.com.sistemabanco.util.Validador;
+import br.com.sistemabanco.domain.util.Validador;
 import br.com.sistemabanco.domain.exception.CpfInvalidoException;
 import br.com.sistemabanco.domain.exception.EmailInvalidoException;
 import br.com.sistemabanco.domain.exception.SaldoInsuficienteException;
