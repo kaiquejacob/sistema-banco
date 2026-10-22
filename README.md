@@ -1,8 +1,12 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=18&duration=2500&pause=700&color=2F81F7&center=true&vCenter=true&width=780&lines=%5BSYSTEM%5D+BANKING+SYSTEM+ONLINE;%5BSYSTEM%5D+LOADING+JDBC+%26+MYSQL...;%5BSYSTEM%5D+MOCKITO+SUITE+ACTIVE;%5BSYSTEM%5D+READY+FOR+TRANSACTIONS..." alt="Typing Animation">
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=17&duration=2500&pause=700&color=2F81F7&center=true&vCenter=true&width=1000&lines=%5BSYSTEM%5D+BANKING+API+ONLINE;%5BSYSTEM%5D+LOADING+SECURITY+MODULE...;%5BSYSTEM%5D+SPRING+SECURITY+CONNECTED;%5BSYSTEM%5D+MYSQL+%26+PROMETHEUS+CONNECTED;%5BSYSTEM%5D+READY+FOR+TRANSACTIONS..." alt="Typing Animation">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=160&color=0:05070A,50:0B1F3A,100:061A36&text=SISTEMA%20BANC%C3%81RIO&fontSize=40&fontColor=E6F1FF&fontAlignY=40&desc=KAIQUE%20JACOB%20%7C%20JAVA%20%2B%20JDBC%20%2B%20MYSQL%20%2B%20MOCKITO&descAlignY=65&descSize=15" width="100%" alt="Sistema Bancário Banner">
+<h1>SISTEMA DE BANCO</h1>
+
+<p>
+  <strong>KAIQUE JACOB</strong> · Java 25 · Spring Boot 4 · Spring Security · MySQL · Docker
+</p>
 
 </div>
 
@@ -11,193 +15,404 @@
 <div align="center">
 
 ![Java](https://img.shields.io/badge/Java%2025-0B0F14?style=for-the-badge&logo=openjdk&logoColor=2F81F7)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot%204-0B0F14?style=for-the-badge&logo=springboot&logoColor=2F81F7)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-0B0F14?style=for-the-badge&logo=springsecurity&logoColor=2F81F7)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-0B0F14?style=for-the-badge&logo=spring&logoColor=2F81F7)
 ![MySQL](https://img.shields.io/badge/MySQL-0B0F14?style=for-the-badge&logo=mysql&logoColor=2F81F7)
 ![Docker](https://img.shields.io/badge/Docker-0B0F14?style=for-the-badge&logo=docker&logoColor=2F81F7)
-![Maven](https://img.shields.io/badge/Maven-0B0F14?style=for-the-badge&logo=apachemaven&logoColor=2F81F7)
-![Status](https://img.shields.io/badge/Status-Evolving-0B0F14?style=for-the-badge&logo=github&logoColor=2F81F7)
+![Prometheus](https://img.shields.io/badge/Prometheus-0B0F14?style=for-the-badge&logo=prometheus&logoColor=2F81F7)
+![Grafana](https://img.shields.io/badge/Grafana-0B0F14?style=for-the-badge&logo=grafana&logoColor=2F81F7)
 
 </div>
 
 ## `SOBRE`
 
-Sistema de gerenciamento de contas bancárias via console desenvolvido em **Java**, focado em arquitetura limpa e padrões de mercado. A aplicação permite a criação de contas (Corrente, Poupança e Investimento) com integração em tempo real à API REST do ViaCEP para preenchimento automático de endereço, controle transacional de transferências, tratamento robusto de exceções e persistência relacional em banco de dados **MySQL**.
+API REST de sistema bancário desenvolvida em **Java 25** com **Spring Boot 4**, **Spring Security**, **Spring Data JPA** e **MySQL**.
 
-Projeto utilizado como aplicação prática evolutiva dos conhecimentos da **Maratona Java (DevDojo)** e bootcamps de desenvolvimento backend, migrando de persistência em arquivos para JDBC com padrão **DAO**, uso de `Optional`, **Docker Compose** para infraestrutura local e testes unitários automatizados com **JUnit 5 e Mockito**.
+O sistema permite:
+
+- 🏦 **Cadastro de contas** corrente, poupança e investimento.
+- 💰 **Depósitos e saques** com regras de negócio, taxas e histórico de transações.
+- 🔁 **Transferências** entre contas, com débito e crédito em uma única transação.
+- 🔐 **Autenticação HTTP Basic** com usuários `CLIENTE` e `ADMIN`.
+- 🧾 **Extrato** e consulta da própria conta por meio de rotas `/me`.
+- 🛡️ **Controle de acesso** por papel, impedindo que um cliente opere a conta de outro usuário.
+- 📈 **Observabilidade** com Actuator, Prometheus e Grafana.
+- 📘 **Documentação interativa** com OpenAPI/Swagger.
+
+Os dados são persistidos em **MySQL**, estruturados sob princípios de **Domain-Driven Design (DDD)** e arquitetura em camadas.
+
+---
+
+## `FLUXO DA API`
+
+```text
+                 ┌──────────────────────────────────────────┐
+                 │              CLIENTE / ADMIN             │
+                 │        HTTP Basic + JSON Request         │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │              PRESENTATION                │
+                 │  Controllers · DTOs · Validation · Errors │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │              APPLICATION                 │
+                 │      ContaService · RegistroDeConta      │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │                 DOMAIN                   │
+                 │  ContaBancaria · Transacao · Regras      │
+                 └────────────────────┬─────────────────────┘
+                                      │
+                                      ▼
+                 ┌──────────────────────────────────────────┐
+                 │             INFRASTRUCTURE               │
+                 │   JPA/MySQL · ViaCEP · Security · Docs   │
+                 └──────────────────────────────────────────┘
+```
 
 ---
 
 ## `CONCEITOS APLICADOS`
 
 ```text
-SISTEMA BANCÁRIO
+SISTEMA DE BANCO (SPRING BOOT 4 + JAVA 25)
 
-[✓] Arquitetura em Camadas (Application, Domain, Infrastructure, Util)
-[✓] Polimorfismo e Design Patterns (Factory Method e substituição de instanceof em ExtratoService)
-[✓] Pattern Data Access Object (DAO) para isolamento total da camada de persistência
-[✓] Gestão estrita de recursos JDBC (try-with-resources prevenindo vazamento de conexões)
-[✓] Programação Funcional com Optional<T> e Streams API (filtragens e ordenações)
-[✓] Controle Transacional JDBC (commit, rollback e gerenciamento de auto-commit manual)
-[✓] Consumo de API REST Externa (Integração com ViaCEP via java.net.http.HttpClient)
-[✓] Exceções Customizadas Unchecked (Herança de RuntimeException isolando regras de negócio)
-[✓] Testes Unitários Automatizados (Suíte com JUnit 5 + Mockito)
-[✓] Gestão de Build e Dependências (Apache Maven via pom.xml)
-[✓] Validações de Domínio com RegEx (Pré-compilação e validação de CPF/e-mail)
-[✓] Containerização de Infraestrutura (Docker Compose subindo instância MySQL 8.0)
-[✓] Clean Code, DRY & Encapsulamento (Restrição de acesso, eliminação de duplicação)
-[✓] Value Objects (Uso de Records no Java para objetos imutáveis como Endereço)
-[✓] Configuração Segura (Credenciais extraídas via Variáveis de Ambiente)
-
+[✓] Arquitetura em camadas com Domain-Driven Design (DDD)
+[✓] Separação entre application, domain, infrastructure e presentation
+[✓] Domínio rico com ContaBancaria, ContaCorrente, Poupança e Investimento
+[✓] Padrão Factory para criação de contas
+[✓] Ports & Adapters com ContaDAO e CredencialDAO
+[✓] Persistência com Spring Data JPA, Hibernate e MySQL
+[✓] Controle de concorrência com lock otimista (@Version)
+[✓] Transações com Spring @Transactional
+[✓] Autenticação e autorização com Spring Security
+[✓] HTTP Basic stateless com papéis CLIENTE e ADMIN
+[✓] Senhas armazenadas com BCrypt
+[✓] Validação de entrada com Bean Validation
+[✓] Tratamento de erros com ProblemDetail (RFC 9457)
+[✓] Integração externa com ViaCEP
+[✓] Documentação OpenAPI e Swagger UI
+[✓] Observabilidade com Actuator, Micrometer, Prometheus e Grafana
+[✓] Testes unitários, de integração e de concorrência com JUnit 5
 ```
 
 ---
 
-## `FUNCIONALIDADES`
+## `ENDPOINTS DA API`
 
-| Operação | Descrição |
-| --- | --- |
-| 📝 Criar conta | Cadastra conta consumindo a API REST do ViaCEP para obter o endereço via HTTP |
-| 💰 Depositar | Credita saldo na conta informada e registra a transação no banco de dados |
-| 💸 Sacar | Debita saldo respeitando saldo disponível e as regras de saque da conta corrente |
-| 📊 Ver extrato | Exibe dados do titular, endereço completo e histórico das transações |
-| 📋 Listar contas | Exibe todas as contas ativas ordenadas por saldo de forma decrescente |
-| ❌ Remover conta | Exclui o cadastro do banco — permitido exclusivamente para contas com saldo zerado |
-| 🔄 Transferir | Operação atômica entre duas contas com garantia de transação ACID no MySQL |
-
----
-
-## `EXCEÇÕES CUSTOMIZADAS`
-
-| Exceção | Motivo |
-| --- | --- |
-| `br.com.sistemabanco.domain.exception.SaldoInsuficienteException` | Saldo insuficiente para realizar a operação de saque ou transferência |
-| `br.com.sistemabanco.domain.exception.ContaNaoEncontradaException` | CPF pesquisado não corresponde a nenhuma conta registrada no banco |
-| `br.com.sistemabanco.domain.exception.CpfInvalidoException` | CPF informado falha no algoritmo de validação de dígitos verificadores |
-| `br.com.sistemabanco.domain.exception.EmailInvalidoException` | Endereço de e-mail não atende ao padrão da expressão regular |
-| `br.com.sistemabanco.domain.exception.ContaComSaldoException` | Tentativa de remoção de conta mantendo saldo superior a zero |
-| `br.com.sistemabanco.domain.exception.CpfJaCadastradoException` | Tentativa de cadastrar um CPF já existente |
-| `br.com.sistemabanco.domain.exception.ServicoCepException` | Falha na comunicação HTTP ou de rede durante a consulta à API do ViaCEP |
-
-*Todas as exceções estendem `RuntimeException` (unchecked), garantindo o isolamento da camada de apresentação sem poluir as assinaturas dos métodos com `throws`.*
+| Operação | Método / Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| 🏦 **Criar conta** | `POST /contas` | Público | Cadastra conta, endereço e credencial de acesso |
+| 👤 **Minha conta** | `GET /contas/me` | `CLIENTE` | Retorna os dados da conta autenticada |
+| 📝 **Meu extrato** | `GET /contas/me/extrato` | `CLIENTE` | Retorna o histórico de transações |
+| 💰 **Depositar** | `POST /contas/me/depositos` | `CLIENTE` | Realiza depósito na conta autenticada |
+| 🏧 **Sacar** | `POST /contas/me/saques` | `CLIENTE` | Realiza saque na conta autenticada |
+| 🔁 **Transferir** | `POST /transferencias` | `CLIENTE` | Transfere da conta autenticada para outra conta |
+| 📊 **Listar contas** | `GET /contas` | `ADMIN` | Lista contas paginadas e ordenadas por saldo |
+| 🔍 **Buscar conta** | `GET /contas/admin/{cpf}` | `ADMIN` | Consulta uma conta pelo CPF |
+| 🧾 **Extrato por CPF** | `GET /contas/admin/{cpf}/extrato` | `ADMIN` | Consulta o extrato de qualquer conta |
+| ❌ **Remover conta** | `DELETE /contas/admin/{cpf}` | `ADMIN` | Remove uma conta sem histórico |
+| 💸 **Cobrar taxa** | `POST /contas/admin/{cpf}/taxa-manutencao` | `ADMIN` | Cobra a taxa de manutenção da conta |
+| ❤️ **Health check** | `GET /actuator/health` | Público | Verifica o estado da aplicação |
+| 📈 **Métricas** | `GET /actuator/prometheus` | `ADMIN` | Expõe métricas para o Prometheus |
 
 ---
 
-## `PERSISTÊNCIA & INTEGRAÇÃO`
+## `SEGURANÇA`
 
-* **Banco de Dados Relacional**: Persistência realizada em **MySQL 8.0** gerenciado via **Docker Compose**.
-* **Camada JDBC**: Acesso aos dados implementado manualmente através de `PreparedStatement` e `ResultSet`.
-* **Pool de conexões**: O acesso usa HikariCP, com limites de conexão configurados e variáveis de ambiente (`DB_URL`, `DB_USER`, `DB_PASSWORD`) como fonte segura de credenciais.
-* **Prevenção de Leaks**: Todos os recursos de banco (`Connection`, `PreparedStatement`, `ResultSet`) utilizam o bloco **try-with-resources**, devolvendo conexões ao pool.
-* **Consultas Seguras**: Utilização do tipo `Optional<ContaBancaria>` na interface `ContaDAO`, forçando o tratamento funcional na camada de serviço via `.orElseThrow()`.
-* **Integração com API REST**: A classe `CepServiceImpl` consome a API do **ViaCEP** através do `HttpClient` nativo do Java.
+A API utiliza **HTTP Basic** com sessão stateless.
+
+```text
+[✓] Cadastro público apenas para criação de conta
+[✓] CLIENTE acessa somente a própria conta por /contas/me
+[✓] ADMIN acessa listagem, consulta, exclusão e taxa de manutenção
+[✓] Rotas não mapeadas são negadas por padrão
+[✓] Senhas armazenadas com BCrypt
+[✓] Mensagem idêntica para usuário inexistente e senha incorreta
+[✓] Seed de administrador controlado por variável de ambiente
+[✓] CSRF desativado por ser uma API stateless sem cookies
+```
+
+> **Limitação:** HTTP Basic envia credenciais em todas as requisições. Em produção, a API deve ser exposta exclusivamente por HTTPS.
 
 ---
 
 ## `COMO EXECUTAR`
 
-### Pré-requisitos
+### 1. Pré-requisitos
 
-* Java 25
-* Maven
-* Docker e Docker Compose
+- **Java 25**
+- **Maven 3.9+**
+- **Docker** e **Docker Compose**
 
-### Banco de dados
-
-Na raiz do projeto, execute:
+### 2. Subir a infraestrutura
 
 ```bash
-docker compose up -d
+docker compose up -d db prometheus grafana
 ```
 
-O MySQL será disponibilizado em `localhost:3307`, com o banco `banco_db` e as tabelas criadas pelo `schema.sql`.
+O MySQL será iniciado na porta `3307`, o Prometheus em `9090` e o Grafana em `3000`.
 
-> Aguarde o container ficar pronto para conexões antes de iniciar a aplicação. A porta `3307` não pode estar sendo usada por outro container ou serviço MySQL.
+### 3. Configurar a senha do administrador
 
-### Testes
+```bash
+# Linux/macOS
+export ADMIN_PASSWORD=SuaSenhaForte#1
+
+# Windows PowerShell
+$env:ADMIN_PASSWORD="SuaSenhaForte#1"
+```
+
+O administrador será criado automaticamente no primeiro start, caso ainda não exista.
+
+### 4. Executar a aplicação
+
+```bash
+mvn spring-boot:run
+```
+
+A API estará disponível em: `http://localhost:8080`.
+
+### 5. Executar com Swagger
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Acesse:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+<details>
+<summary><strong>💡 Exemplos práticos de requisição (cURL)</strong></summary>
+
+<br>
+
+#### 1. Criar conta
+
+```bash
+curl -X POST http://localhost:8080/contas \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titular": "Kaíque Jacob",
+    "cpf": "52998224725",
+    "email": "kaique@example.com",
+    "cep": "01001000",
+    "tipo": "CORRENTE",
+    "saldoInicial": 1000.00,
+    "senha": "SenhaForte#1"
+  }'
+```
+
+#### 2. Consultar a própria conta
+
+```bash
+curl -u 52998224725:SenhaForte#1 \
+  http://localhost:8080/contas/me
+```
+
+#### 3. Realizar depósito
+
+```bash
+curl -X POST http://localhost:8080/contas/me/depositos \
+  -u 52998224725:SenhaForte#1 \
+  -H "Content-Type: application/json" \
+  -d '{"valor": 250.00}'
+```
+
+#### 4. Realizar transferência
+
+```bash
+curl -X POST http://localhost:8080/transferencias \
+  -u 52998224725:SenhaForte#1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpfDestino": "11144477735",
+    "valor": 100.00
+  }'
+```
+
+#### 5. Listar contas como administrador
+
+```bash
+curl -u admin:SuaSenhaForte#1 \
+  http://localhost:8080/contas
+```
+
+</details>
+
+---
+
+## `TESTES AUTOMATIZADOS`
+
+O projeto inclui testes unitários, testes de repositório, testes de segurança, testes de concorrência e testes de integração ponta a ponta.
 
 ```bash
 mvn test
 ```
 
-### Aplicação
+Cenários cobertos:
 
-```bash
-mvn compile
-java -cp "target/classes;target/dependency/*" br.com.sistemabanco.Main
-```
-
-No Windows, caso as dependências ainda não estejam disponíveis em `target/dependency`, execute:
-
-```bash
-mvn dependency:copy-dependencies
+```text
+[✓] Regras de depósito, saque, transferência e taxas
+[✓] Criação de contas por tipo
+[✓] Persistência e consulta com JPA
+[✓] Rollback em falhas de transação
+[✓] Conflito de concorrência com lock otimista
+[✓] Autenticação HTTP Basic
+[✓] Autorização por CLIENTE e ADMIN
+[✓] Proteção contra acesso à conta de outro usuário
+[✓] Cadastro público e criação de credencial
+[✓] Tratamento global de erros
+[✓] Integração com ViaCEP
 ```
 
 ---
 
-## `ESTRUTURA`
+## `ESTRUTURA DO PROJETO`
+
+A estrutura segue os princípios de **Domain-Driven Design**, **Clean Architecture** e **Ports & Adapters**:
 
 ```text
 src/main/java/br/com/sistemabanco/
-├── Main.java
-├── application/
+├── application/              # Casos de uso e orquestração do negócio
 │   ├── ContaService.java
-│   └── ExtratoService.java
-├── domain/
-│   ├── exception/
-│   ├── factory/
-│   ├── model/
-│   ├── repository/
-│   └── service/
-├── infrastructure/
-│   ├── client/
-│   ├── config/
-│   └── persistence/
-└── util/
+│   └── RegistroDeConta.java
+│
+├── domain/                   # Núcleo do negócio, sem dependência de framework
+│   ├── exception/            # Exceções de negócio
+│   ├── factory/              # Criação de contas
+│   ├── model/                # ContaBancaria, Transacao, Endereco e tipos
+│   ├── repository/           # Portas: ContaDAO e CredencialDAO
+│   ├── service/              # Contrato do serviço de CEP
+│   └── validation/           # Validação de CPF
+│
+├── infrastructure/           # Detalhes técnicos e adaptadores externos
+│   ├── client/               # Integração com ViaCEP
+│   ├── config/               # Configurações de cliente e propriedades
+│   ├── openapi/              # Configuração do Swagger/OpenAPI
+│   ├── persistence/          # JPA, entidades, mappers e repositórios
+│   └── security/             # Usuários, papéis, BCrypt e Spring Security
+│
+└── presentation/             # Camada de entrada HTTP
+    ├── controller/           # Controllers REST
+    ├── handler/              # Tratamento global de erros
+    ├── mapper/               # Conversão domínio -> DTO
+    ├── request/              # DTOs de entrada
+    ├── response/             # DTOs de saída
+    └── validation/           # Validações de payload
 ```
 
-Os principais arquivos da aplicação estão organizados da seguinte forma:
+<details>
+<summary><strong>Visualizar árvore completa de arquivos</strong></summary>
 
 ```text
 sistema-de-banco/
 ├── src/
-│   ├── main/java/br/com/sistemabanco/
-│   │   ├── Main.java
-│   │   ├── application/
-│   │   ├── domain/
-│   │   ├── infrastructure/
-│   │   └── util/
-│   └── test/java/br/com/sistemabanco/
-│       ├── ContaBancariaTest.java
-│       ├── ContaServiceTest.java
-│       └── ValidadorTest.java
+│   ├── main/
+│   │   ├── java/br/com/sistemabanco/
+│   │   │   ├── application/
+│   │   │   │   ├── ContaService.java
+│   │   │   │   └── RegistroDeConta.java
+│   │   │   ├── domain/
+│   │   │   │   ├── exception/
+│   │   │   │   ├── factory/
+│   │   │   │   ├── model/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── service/
+│   │   │   │   └── validation/
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── client/
+│   │   │   │   ├── config/
+│   │   │   │   ├── openapi/
+│   │   │   │   ├── persistence/
+│   │   │   │   └── security/
+│   │   │   └── presentation/
+│   │   │       ├── controller/
+│   │   │       ├── handler/
+│   │   │       ├── mapper/
+│   │   │       ├── request/
+│   │   │       ├── response/
+│   │   │       └── validation/
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       └── application-dev.yml
+│   └── test/
+│       └── java/br/com/sistemabanco/
+│           ├── application/
+│           ├── domain/
+│           ├── infrastructure/
+│           ├── integration/
+│           └── presentation/
 ├── docker-compose.yml
-├── schema.sql
+├── prometheus.yml
 ├── pom.xml
+├── schema.sql
 └── README.md
 ```
 
-* `application`: casos de uso e orquestração das operações bancárias. O serviço recebe suas dependências por construtor.
-* `domain`: modelos, regras, exceções, contratos de repositório e Factory.
-* `infrastructure`: implementação JDBC, conexão com MySQL e cliente ViaCEP.
-* `util`: validações reutilizáveis.
-
-Essa separação mantém o domínio independente do console e da implementação JDBC, preparando a futura migração para Spring Boot, Spring Data JPA e uma API REST. Transferências não são tratadas como saques: não consomem a franquia nem cobram tarifa de saque. O histórico de transações impede a exclusão física de uma conta enquanto houver lançamentos associados.
+</details>
 
 ---
 
+## `OBSERVABILIDADE`
 
-## `TECNOLOGIA`
+A aplicação expõe métricas no formato Prometheus por meio do Actuator:
 
+```text
+http://localhost:8080/actuator/prometheus
+```
+
+O Prometheus coleta as métricas periodicamente e o Grafana permite visualizá-las em dashboards.
+
+| Serviço | URL |
+|---|---|
+| API | `http://localhost:8080` |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
+
+---
+
+## `TECNOLOGIAS`
 
 <pre align="center">
 [SYSTEM STATUS]
 
-Language   : JAVA 25
-Database   : MYSQL 8.0 (DOCKER)
-Testing    : JUNIT 5 + MOCKITO
-Integration: VIACEP REST API (HTTPCLIENT)
-Build      : APACHE MAVEN
-Status     : EVOLVING
+Language  : JAVA 25
+Framework : SPRING BOOT 4
+Security  : SPRING SECURITY + HTTP BASIC + BCRYPT
+Database  : MYSQL + SPRING DATA JPA
+Docs      : SPRINGDOC OPENAPI + SWAGGER UI
+Metrics   : ACTUATOR + MICROMETER + PROMETHEUS
+Dashboard : GRAFANA
+Runtime   : DOCKER + DOCKER COMPOSE
+Testing   : JUNIT 5 + MOCKITO + H2
+Build     : MAVEN
 
+STATUS    : READY_TO_BUILD
+
+&gt; keep_learning();
+&gt; keep_building();
 </pre>
 
-<br>
+</div>
+
+---
+
+<div align="center">
+
+### `SYSTEM // END`
+
+**Java • Spring Boot • Spring Security • MySQL • Docker • Prometheus • Grafana**
+
+</div>
