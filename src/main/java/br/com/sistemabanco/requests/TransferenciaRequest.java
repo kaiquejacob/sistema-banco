@@ -1,5 +1,6 @@
 package br.com.sistemabanco.requests;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import br.com.sistemabanco.validation.Cpf;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -9,7 +10,12 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record TransferenciaRequest(
-        @NotBlank @Cpf String cpfDestino,
-        @NotNull @Positive @Digits(integer = 13, fraction = 2) BigDecimal valor
+        @Schema(description = "CPF da conta de destino", example = "11144477735")
+        @NotBlank @Cpf
+        String cpfDestino,
+
+        @Schema(description = "Valor a transferir", example = "100.00")
+        @NotNull @Positive @Digits(integer = 13, fraction = 2)
+        BigDecimal valor
 ) {
 }

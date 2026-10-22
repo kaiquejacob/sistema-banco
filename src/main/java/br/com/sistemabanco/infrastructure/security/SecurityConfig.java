@@ -27,12 +27,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(regras -> regras
                         .requestMatchers(HttpMethod.POST, "/contas").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/contas").hasRole("ADMIN")
                         .requestMatchers("/contas/admin/**").hasRole("ADMIN")
                         .requestMatchers("/contas/me/**", "/transferencias").hasRole("CLIENTE")
-                        // Qualquer rota que não esteja listada acima é negada.
                         .anyRequest().denyAll());
 
         return http.build();
     }
+
 }

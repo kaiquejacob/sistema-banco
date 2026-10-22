@@ -19,10 +19,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.net.URI;
 import java.security.Principal;
 
+@Tag(name = "Contas", description = "Cadastro, consulta e operações em contas bancárias")
 @RestController
 @RequestMapping("/contas")
 public class ContaController {
@@ -35,6 +40,13 @@ public class ContaController {
 
     // ---- Público: cadastro ----
 
+    @Operation(summary = "Cadastra uma nova conta bancária")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Conta criada"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "409", description = "CPF já cadastrado"),
+            @ApiResponse(responseCode = "502", description = "Falha ao consultar o ViaCEP")
+    })
     @PostMapping
     public ResponseEntity<ContaResponse> criar(@Valid @RequestBody CriarContaRequest request) {
         ContaBancaria conta = contaService.criarConta(
@@ -57,6 +69,12 @@ public class ContaController {
 
     // ---- Cliente: o CPF vem do login, nunca da URL nem do corpo ----
 
+    @Operation(summary = "Retorna a conta do cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Conta encontrada"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "404", description = "Conta não encontrada")
+    })
     @GetMapping("/me")
     public ContaResponse minhaConta(Principal principal) {
         return ContaResponse.de(contaService.buscarConta(principal.getName()));
@@ -67,12 +85,26 @@ public class ContaController {
         return ExtratoMapper.de(contaService.buscarConta(principal.getName()));
     }
 
+    @Operation(summary = "Realiza um depósito na conta do cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Depósito realizado"),
+            @ApiResponse(responseCode = "400", description = "Valor inválido"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "422", description = "Operação não permitida")
+    })
     @PostMapping("/me/depositos")
     public ContaResponse depositar(Principal principal, @Valid @RequestBody ValorRequest request) {
         contaService.depositar(principal.getName(), request.valor());
         return ContaResponse.de(contaService.buscarConta(principal.getName()));
     }
 
+    @Operation(summary = "Realiza um saque na conta do cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Saque realizado"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "404", description = "Conta não encontrada"),
+            @ApiResponse(responseCode = "422", description = "Saldo insuficiente ou limite atingido")
+    })
     @PostMapping("/me/saques")
     public ContaResponse sacar(Principal principal, @Valid @RequestBody ValorRequest request) {
         contaService.sacar(principal.getName(), request.valor());
@@ -81,6 +113,12 @@ public class ContaController {
 
     // ---- Admin ----
 
+    @Operation(summary = "Lista contas ordenadas por saldo", description = "Operação exclusiva de administrador.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Página de contas"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Acesso restrito a administrador")
+    })
     @GetMapping
     public PaginaResponse<ContaResponse> listar(
             @RequestParam(defaultValue = "0") int pagina,
@@ -99,6 +137,14 @@ public class ContaController {
         return ExtratoMapper.de(contaService.buscarConta(cpf));
     }
 
+    @Operation(summary = "Remove uma conta", description = "Operação exclusiva de administrador.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Conta removida"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Acesso restrito a administrador"),
+            @ApiResponse(responseCode = "404", description = "Conta não encontrada"),
+            @ApiResponse(responseCode = "409", description = "Conta possui histórico ou saldo")
+    })
     @DeleteMapping("/admin/{cpf}")
     public ResponseEntity<Void> remover(@PathVariable String cpf) {
         contaService.removerConta(cpf);
