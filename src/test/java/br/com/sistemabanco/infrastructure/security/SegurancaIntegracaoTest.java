@@ -27,6 +27,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,6 +93,13 @@ class SegurancaIntegracaoTest {
     void comSenhaErradaDeveRetornar401() throws Exception {
         mvc.perform(get("/contas/me").with(httpBasic(CPF_A, "senha-errada")))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void falhaDeLoginNaoDeveAbrirDesafioBasicDoNavegador() throws Exception {
+        mvc.perform(get("/contas").with(httpBasic("admin", "senha-errada")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("WWW-Authenticate"));
     }
 
     @Test

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeuBanco</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="tela-login" class="tela tela-auth">
+    <div class="auth-card">
+        <h1>MeuBanco</h1>
+        <p class="texto-secundario">Acesse sua conta</p>
+
+        <form id="form-login">
+            <label for="login-cpf">CPF ou usuário</label>
+            <input id="login-cpf" type="text" placeholder="Digite seu CPF ou usuário" required>
+
+            <label for="login-senha">Senha</label>
+            <input id="login-senha" type="password" placeholder="Digite sua senha" required>
+
+            <p id="mensagem-login" class="mensagem"></p>
+
+            <button type="submit" class="botao-principal">Entrar</button>
+        </form>
+
+        <p class="texto-secundario texto-centralizado">
+            Ainda não tem conta?
+            <button id="botao-abrir-cadastro" class="botao-link" type="button">
+                Criar conta
+            </button>
+        </p>
+    </div>
+</section>
+
+<!-- CADASTRO -->
+<section id="tela-cadastro" class="tela tela-auth" hidden>
+    <div class="auth-card">
+        <h1>Criar conta</h1>
+        <p class="texto-secundario">Preencha seus dados</p>
+
+        <form id="form-cadastro">
+            <label for="cadastro-titular">Nome completo</label>
+            <input id="cadastro-titular" type="text" required>
+
+            <label for="cadastro-cpf">CPF</label>
+            <input id="cadastro-cpf" type="text" placeholder="000.000.000-00" required>
+
+            <label for="cadastro-email">E-mail</label>
+            <input id="cadastro-email" type="email" required>
+
+            <label for="cadastro-cep">CEP</label>
+            <input id="cadastro-cep" type="text" placeholder="00000-000" required>
+
+            <label for="cadastro-tipo">Tipo de conta</label>
+            <select id="cadastro-tipo" required>
+                <option value="">Selecione</option>
+                <option value="CORRENTE">Corrente</option>
+                <option value="POUPANCA">Poupança</option>
+                <option value="INVESTIMENTO">Investimento</option>
+            </select>
+
+            <label for="cadastro-saldo">Saldo inicial</label>
+            <input id="cadastro-saldo" type="number" min="0" step="0.01" value="0" required>
+
+            <label for="cadastro-senha">Senha</label>
+            <input id="cadastro-senha" type="password" minlength="8" required>
+
+            <p id="mensagem-cadastro" class="mensagem"></p>
+
+            <button type="submit" class="botao-principal">Criar conta</button>
+        </form>
+
+        <button id="botao-voltar-login" class="botao-link" type="button">
+            Voltar para o login
+        </button>
+    </div>
+</section>
+
+<!-- APLICAÇÃO -->
+<div id="app" hidden>
+    <aside id="sidebar" class="sidebar">
+        <h2 class="logo">MeuBanco</h2>
+
+        <nav class="navegacao">
+            <button class="nav-item ativo" data-page="conta">Minha conta</button>
+            <button class="nav-item" data-page="extrato">Extrato</button>
+            <button class="nav-item" data-page="transferencia">Transferência</button>
+            <button class="nav-item" data-page="admin" id="menu-admin" hidden>
+                Administração
+            </button>
+        </nav>
+
+        <button id="botao-sair" class="botao-sair">Sair da conta</button>
+    </aside>
+
+    <main class="conteudo">
+
+        <!-- MINHA CONTA -->
+        <section id="tela-conta" class="pagina">
+            <header class="pagina-header">
+                <div>
+                    <h1>Minha conta</h1>
+                    <p class="texto-secundario">Bem-vindo ao MeuBanco</p>
+                </div>
+            </header>
+
+            <div class="card saldo-card">
+                <p class="texto-secundario">Saldo disponível</p>
+                <h2 id="saldo" class="saldo">R$ 0,00</h2>
+            </div>
+
+            <div class="grid-operacoes">
+                <div class="card">
+                    <h3>Depósito</h3>
+                    <p class="texto-secundario">Adicione dinheiro à sua conta.</p>
+
+                    <form id="form-deposito">
+                        <label for="valor-deposito">Valor (R$)</label>
+                        <input id="valor-deposito" type="number" min="0.01" step="0.01" placeholder="0,00" required>
+                        <button class="botao-principal" type="submit">Depositar</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Saque</h3>
+                    <p class="texto-secundario">Retire dinheiro da sua conta.</p>
+
+                    <form id="form-saque">
+                        <label for="valor-saque">Valor (R$)</label>
+                        <input id="valor-saque" type="number" min="0.01" step="0.01" placeholder="0,00" required>
+                        <button class="botao-secundario" type="submit">Sacar</button>
+                    </form>
+                </div>
+            </div>
+
+            <p id="mensagem-conta" class="mensagem"></p>
+
+            <div class="card dados-conta">
+                <h3>Dados da conta</h3>
+
+                <div class="dado">
+                    <span class="texto-secundario">Titular</span>
+                    <span id="titular">—</span>
+                </div>
+
+                <div class="dado">
+                    <span class="texto-secundario">CPF</span>
+                    <span id="cpf">—</span>
+                </div>
+
+                <div class="dado">
+                    <span class="texto-secundario">Tipo de conta</span>
+                    <span id="tipo">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXTRATO -->
+        <section id="tela-extrato" class="pagina" hidden>
+            <header class="pagina-header">
+                <div>
+                    <h1>Extrato</h1>
+                    <p class="texto-secundario">Histórico de movimentações</p>
+                </div>
+            </header>
+
+            <div class="card">
+                <ul id="lista-extrato" class="lista-extrato"></ul>
+            </div>
+        </section>
+
+        <!-- TRANSFERÊNCIA -->
+        <section id="tela-transferencia" class="pagina" hidden>
+            <header class="pagina-header">
+                <div>
+                    <h1>Transferência</h1>
+                    <p class="texto-secundario">Transfira valores entre contas</p>
+                </div>
+            </header>
+
+            <div class="card">
+                <form id="form-transferencia">
+                    <label for="destino-transferencia">CPF da conta de destino</label>
+                    <input id="destino-transferencia" type="text" placeholder="CPF do destinatário" required>
+
+                    <label for="valor-transferencia">Valor (R$)</label>
+                    <input id="valor-transferencia" type="number" min="0.01" step="0.01" placeholder="0,00" required>
+
+                    <button class="botao-principal" type="submit">Transferir</button>
+
+                    <p id="mensagem-transferencia" class="mensagem"></p>
+                </form>
+            </div>
+        </section>
+
+        <!-- ADMINISTRAÇÃO -->
+        <section id="tela-admin" class="pagina" hidden>
+            <header class="pagina-header">
+                <div>
+                    <h1>Administração</h1>
+                    <p class="texto-secundario">
+                        Gerencie as contas do banco
+                    </p>
+                </div>
+            </header>
+
+            <div class="card">
+                <h3>Buscar conta</h3>
+
+                <form id="form-buscar-admin" class="form-inline">
+                    <div>
+                        <label for="cpf-busca">CPF</label>
+                        <input id="cpf-busca" type="text" placeholder="000.000.000-00" required>
+                    </div>
+
+                    <button class="botao-principal" type="submit">Buscar</button>
+                </form>
+
+                <div id="resultado-busca" class="resultado-busca"></div>
+            </div>
+
+            <div class="card">
+                <div class="cabecalho-lista">
+                    <h3>Contas cadastradas</h3>
+
+                    <div class="paginacao">
+                        <button id="pagina-anterior" class="botao-paginacao" type="button">
+                            Anterior
+                        </button>
+
+                        <span id="pagina-atual" class="texto-secundario">Página 1</span>
+
+                        <button id="pagina-proxima" class="botao-paginacao" type="button">
+                            Próxima
+                        </button>
+                    </div>
+                </div>
+
+                <table class="tabela">
+                    <thead>
+                    <tr>
+                        <th>Titular</th>
+                        <th>CPF</th>
+                        <th>Tipo</th>
+                        <th>Saldo</th>
+                        <th>Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tabela-contas"></tbody>
+                </table>
+            </div>
+
+            <p id="mensagem-admin" class="mensagem"></p>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
