@@ -1,6 +1,6 @@
-<div align="center">
+  <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=17&duration=2500&pause=700&color=2F81F7&center=true&vCenter=true&width=1000&lines=%5BSYSTEM%5D+BANKING+API+ONLINE;%5BSYSTEM%5D+LOADING+SECURITY+MODULE...;%5BSYSTEM%5D+SPRING+SECURITY+CONNECTED;%5BSYSTEM%5D+MYSQL+%26+PROMETHEUS+CONNECTED;%5BSYSTEM%5D+READY+FOR+TRANSACTIONS..." alt="Typing Animation">
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=17&duration=2500&pause=700&color=2F81F7&center=true&vCenter=true&width=1000&lines=%5BSYSTEM%5D+BANKING+API+ONLINE;%5BSYSTEM%5D+LOADING+SECURITY+MODULE...;%5BSYSTEM%5D+SPRING+SECURITY+CONNECTED;%5BSYSTEM%5D+WEB+INTERFACE+READY;%5BSYSTEM%5D+MYSQL+%26+PROMETHEUS+CONNECTED;%5BSYSTEM%5D+READY+FOR+TRANSACTIONS..." alt="Typing Animation">
 
 <h1>SISTEMA DE BANCO</h1>
 
@@ -14,20 +14,67 @@
 
 <div align="center">
 
+
+
 ![Java](https://img.shields.io/badge/Java%2025-0B0F14?style=for-the-badge&logo=openjdk&logoColor=2F81F7)
+
+
+
+
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot%204-0B0F14?style=for-the-badge&logo=springboot&logoColor=2F81F7)
+
+
+
+
 ![Spring Security](https://img.shields.io/badge/Spring%20Security-0B0F14?style=for-the-badge&logo=springsecurity&logoColor=2F81F7)
+
+
+
+
 ![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-0B0F14?style=for-the-badge&logo=spring&logoColor=2F81F7)
+
+
+
+
 ![MySQL](https://img.shields.io/badge/MySQL-0B0F14?style=for-the-badge&logo=mysql&logoColor=2F81F7)
+
+
+
+
+![HTML](https://img.shields.io/badge/HTML5-0B0F14?style=for-the-badge&logo=html5&logoColor=2F81F7)
+
+
+
+
+![CSS](https://img.shields.io/badge/CSS3-0B0F14?style=for-the-badge&logo=css&logoColor=2F81F7)
+
+
+
+
+![JavaScript](https://img.shields.io/badge/JavaScript-0B0F14?style=for-the-badge&logo=javascript&logoColor=2F81F7)
+
+
+
+
 ![Docker](https://img.shields.io/badge/Docker-0B0F14?style=for-the-badge&logo=docker&logoColor=2F81F7)
+
+
+
+
 ![Prometheus](https://img.shields.io/badge/Prometheus-0B0F14?style=for-the-badge&logo=prometheus&logoColor=2F81F7)
+
+
+
+
 ![Grafana](https://img.shields.io/badge/Grafana-0B0F14?style=for-the-badge&logo=grafana&logoColor=2F81F7)
+
+
 
 </div>
 
 ## `SOBRE`
 
-API REST de sistema bancário desenvolvida em **Java 25** com **Spring Boot 4**, **Spring Security**, **Spring Data JPA** e **MySQL**.
+Sistema bancário desenvolvido em **Java 25** com **Spring Boot 4**, **Spring Security**, **Spring Data JPA** e **MySQL**, composto por uma API REST e uma interface web em HTML, CSS e JavaScript.
 
 O sistema permite:
 
@@ -37,6 +84,7 @@ O sistema permite:
 - 🔐 **Autenticação HTTP Basic** com usuários `CLIENTE` e `ADMIN`.
 - 🧾 **Extrato** e consulta da própria conta por meio de rotas `/me`.
 - 🛡️ **Controle de acesso** por papel: o CPF do cliente vem sempre do login, nunca da URL ou do corpo da requisição.
+- 🖥️ **Interface web** servida pelo próprio Spring Boot, com área do cliente e painel administrativo.
 - ⚙️ **Controle de concorrência** com lock otimista (`@Version`).
 - 📈 **Observabilidade** com Actuator, Prometheus e Grafana.
 - 📘 **Documentação interativa** com OpenAPI/Swagger (perfil `dev`).
@@ -45,12 +93,44 @@ Os dados são persistidos em **MySQL**, estruturados sob princípios de **Domain
 
 ---
 
+## `INTERFACE WEB`
+
+<!-- Adicione um print em docs/images/interface.png e descomente:
+<div align="center">
+<img src="docs/images/interface.png" alt="Interface do Sistema de Banco" width="1100">
+</div>
+-->
+
+A interface é servida pelo próprio Spring Boot em `src/main/resources/static`, sem framework de front-end (HTML, CSS e JavaScript com módulos ES).
+
+Acesse `http://localhost:8080/` com a aplicação em execução.
+
+| Área | Recursos |
+|---|---|
+| **Acesso** | Login com CPF ou `admin` e cadastro de conta com consulta de endereço pelo CEP |
+| **Visão geral** | Saldo, tipo de conta, CPF, endereço e atalhos para as operações |
+| **Extrato** | Histórico de lançamentos da conta |
+| **Operações** | Transferência, depósito e saque |
+| **Administração** | Listagem de contas por saldo, cobrança de taxa de manutenção e encerramento de conta |
+
+Detalhes de funcionamento:
+
+```text
+[✓] Layout responsivo para desktop e celular
+[✓] Menu de administração exibido apenas para o usuário admin
+[✓] Notificações de sucesso e erro em toasts
+[✓] Mensagens de erro vindas do ProblemDetail da API
+[✓] Credenciais mantidas apenas em memória; recarregar a página exige novo login
+```
+
+---
+
 ## `FLUXO DA API`
 
 ```text
                  ┌──────────────────────────────────────────┐
-                 │              CLIENTE / ADMIN             │
-                 │        HTTP Basic + JSON Request         │
+                 │          NAVEGADOR / CLIENTE HTTP        │
+                 │  Interface web · HTTP Basic · JSON       │
                  └────────────────────┬─────────────────────┘
                                       │
                                       ▼
@@ -99,6 +179,7 @@ SISTEMA DE BANCO (SPRING BOOT 4 + JAVA 25)
 [✓] Validação de entrada com Bean Validation e validador de CPF próprio
 [✓] Tratamento de erros com ProblemDetail (RFC 9457)
 [✓] Integração externa com ViaCEP (timeouts configurados e cache em memória)
+[✓] Interface web responsiva em HTML, CSS e JavaScript (módulos ES)
 [✓] Documentação OpenAPI e Swagger UI
 [✓] Observabilidade com Actuator, Micrometer, Prometheus e Grafana
 [✓] Testes unitários, de integração e de concorrência com JUnit 5
@@ -110,6 +191,7 @@ SISTEMA DE BANCO (SPRING BOOT 4 + JAVA 25)
 
 | Operação | Método / Endpoint | Acesso | Descrição |
 |---|---|---|---|
+| 🖥️ **Interface web** | `GET /` | Público | Interface do Internet Banking |
 | 🏦 **Criar conta** | `POST /contas` | Público | Cadastra conta, endereço (via CEP) e credencial de acesso |
 | 👤 **Minha conta** | `GET /contas/me` | `CLIENTE` | Retorna os dados da conta autenticada |
 | 📝 **Meu extrato** | `GET /contas/me/extrato` | `CLIENTE` | Retorna o histórico de transações e os detalhes do tipo de conta |
@@ -174,6 +256,7 @@ A API utiliza **HTTP Basic** com sessão stateless.
 [✓] CLIENTE acessa somente a própria conta por /contas/me
 [✓] ADMIN acessa listagem, consulta, exclusão e taxa de manutenção
 [✓] Rotas não mapeadas são negadas por padrão (denyAll)
+[✓] Apenas os arquivos estáticos da interface são públicos
 [✓] Senhas armazenadas com BCrypt
 [✓] Mensagem idêntica para usuário inexistente e senha incorreta
 [✓] Administrador criado no primeiro start, a partir de variável de ambiente
@@ -252,7 +335,7 @@ O administrador (`admin`) é criado automaticamente no primeiro start, caso aind
 mvn spring-boot:run
 ```
 
-A API estará disponível em: `http://localhost:8080`.
+A API e a interface web estarão disponíveis em: `http://localhost:8080`.
 
 ### 7. Executar com Swagger
 
@@ -345,6 +428,8 @@ Cenários cobertos:
 [✓] Integração com ViaCEP (com cache e sem cachear falhas)
 ```
 
+> A interface web ainda não possui testes automatizados.
+
 ---
 
 ## `ESTRUTURA DO PROJETO`
@@ -379,6 +464,14 @@ src/main/java/br/com/sistemabanco/
     ├── requests/             # DTOs de entrada
     ├── responses/            # DTOs de saída
     └── validation/           # Anotação @Cpf e seu validador
+
+src/main/resources/
+├── static/                   # Interface web
+│   ├── index.html
+│   ├── css/style.css
+│   └── js/                   # app.js, api.js e ui.js
+├── application.yml
+└── application-dev.yml
 ```
 
 <details>
@@ -415,6 +508,10 @@ sistema-de-banco/
 │   │   │   │   └── validation/
 │   │   │   └── SistemaBancoApplication.java
 │   │   └── resources/
+│   │       ├── static/
+│   │       │   ├── css/
+│   │       │   ├── js/
+│   │       │   └── index.html
 │   │       ├── application.yml
 │   │       └── application-dev.yml
 │   └── test/
@@ -449,7 +546,7 @@ O Prometheus (rodando em container) coleta as métricas de `host.docker.internal
 
 | Serviço | URL |
 |---|---|
-| API | `http://localhost:8080` |
+| API e interface web | `http://localhost:8080` |
 | Swagger UI (perfil `dev`) | `http://localhost:8080/swagger-ui.html` |
 | Prometheus | `http://localhost:9090` |
 | Grafana | `http://localhost:3000` |
@@ -465,6 +562,7 @@ O Prometheus (rodando em container) coleta as métricas de `host.docker.internal
 
 Language  : JAVA 25
 Framework : SPRING BOOT 4
+Frontend  : HTML, CSS & JAVASCRIPT
 Security  : SPRING SECURITY + HTTP BASIC + BCRYPT
 Database  : MYSQL + SPRING DATA JPA
 Docs      : SPRINGDOC OPENAPI + SWAGGER UI
@@ -488,6 +586,6 @@ STATUS    : READY_TO_BUILD
 
 ### `SYSTEM // END`
 
-**Java • Spring Boot • Spring Security • MySQL • Docker • Prometheus • Grafana**
+**Java • Spring Boot • Spring Security • MySQL • HTML • CSS • JavaScript • Docker • Prometheus • Grafana**
 
 </div>
