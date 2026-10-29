@@ -3,262 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeuBanco</title>
+    <title>Sistema Banco — Internet Banking</title>
     <link rel="stylesheet" href="/css/style.css">
     <script type="module" src="/js/app.js"></script>
 </head>
 <body>
 
-<!-- LOGIN -->
-<section id="tela-login" class="tela tela-auth">
-    <div class="auth-card">
-        <h1>MeuBanco</h1>
-        <p class="texto-secundario">Acesse sua conta</p>
+    <!-- NOTIFICAÇÕES (TOASTS) -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-        <form id="form-login">
-            <label for="login-cpf">CPF ou usuário</label>
-            <input id="login-cpf" type="text" placeholder="Digite seu CPF ou usuário" required>
-
-            <label for="login-senha">Senha</label>
-            <input id="login-senha" type="password" placeholder="Digite sua senha" required>
-
-            <p id="mensagem-login" class="mensagem"></p>
-
-            <button type="submit" class="botao-principal">Entrar</button>
-        </form>
-
-        <p class="texto-secundario texto-centralizado">
-            Ainda não tem conta?
-            <button id="botao-abrir-cadastro" class="botao-link" type="button">
-                Criar conta
-            </button>
-        </p>
-    </div>
-</section>
-
-<!-- CADASTRO -->
-<section id="tela-cadastro" class="tela tela-auth" hidden>
-    <div class="auth-card">
-        <h1>Criar conta</h1>
-        <p class="texto-secundario">Preencha seus dados</p>
-
-        <form id="form-cadastro">
-            <label for="cadastro-titular">Nome completo</label>
-            <input id="cadastro-titular" type="text" required>
-
-            <label for="cadastro-cpf">CPF</label>
-            <input id="cadastro-cpf" type="text" placeholder="000.000.000-00" required>
-
-            <label for="cadastro-email">E-mail</label>
-            <input id="cadastro-email" type="email" required>
-
-            <label for="cadastro-cep">CEP</label>
-            <input id="cadastro-cep" type="text" placeholder="00000-000" required>
-
-            <label for="cadastro-tipo">Tipo de conta</label>
-            <select id="cadastro-tipo" required>
-                <option value="">Selecione</option>
-                <option value="CORRENTE">Corrente</option>
-                <option value="POUPANCA">Poupança</option>
-                <option value="INVESTIMENTO">Investimento</option>
-            </select>
-
-            <label for="cadastro-saldo">Saldo inicial</label>
-            <input id="cadastro-saldo" type="number" min="0" step="0.01" value="0" required>
-
-            <label for="cadastro-senha">Senha</label>
-            <input id="cadastro-senha" type="password" minlength="8" required>
-
-            <p id="mensagem-cadastro" class="mensagem"></p>
-
-            <button type="submit" class="botao-principal">Criar conta</button>
-        </form>
-
-        <button id="botao-voltar-login" class="botao-link" type="button">
-            Voltar para o login
-        </button>
-    </div>
-</section>
-
-<!-- APLICAÇÃO -->
-<div id="app" hidden>
-    <aside id="sidebar" class="sidebar">
-        <h2 class="logo">MeuBanco</h2>
-
-        <nav class="navegacao">
-            <button class="nav-item ativo" data-page="conta">Minha conta</button>
-            <button class="nav-item" data-page="extrato">Extrato</button>
-            <button class="nav-item" data-page="transferencia">Transferência</button>
-            <button class="nav-item" data-page="admin" id="menu-admin" hidden>
-                Administração
-            </button>
-        </nav>
-
-        <button id="botao-sair" class="botao-sair">Sair da conta</button>
-    </aside>
-
-    <main class="conteudo">
-
-        <!-- MINHA CONTA -->
-        <section id="tela-conta" class="pagina">
-            <header class="pagina-header">
-                <div>
-                    <h1>Minha conta</h1>
-                    <p class="texto-secundario">Bem-vindo ao MeuBanco</p>
-                </div>
-            </header>
-
-            <div class="card saldo-card">
-                <p class="texto-secundario">Saldo disponível</p>
-                <h2 id="saldo" class="saldo">R$ 0,00</h2>
-            </div>
-
-            <div class="grid-operacoes">
-                <div class="card">
-                    <h3>Depósito</h3>
-                    <p class="texto-secundario">Adicione dinheiro à sua conta.</p>
-
-                    <form id="form-deposito">
-                        <label for="valor-deposito">Valor (R$)</label>
-                        <input id="valor-deposito" type="number" min="0.01" step="0.01" placeholder="0,00" required>
-                        <button class="botao-principal" type="submit">Depositar</button>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <h3>Saque</h3>
-                    <p class="texto-secundario">Retire dinheiro da sua conta.</p>
-
-                    <form id="form-saque">
-                        <label for="valor-saque">Valor (R$)</label>
-                        <input id="valor-saque" type="number" min="0.01" step="0.01" placeholder="0,00" required>
-                        <button class="botao-secundario" type="submit">Sacar</button>
-                    </form>
-                </div>
-            </div>
-
-            <p id="mensagem-conta" class="mensagem"></p>
-
-            <div class="card dados-conta">
-                <h3>Dados da conta</h3>
-
-                <div class="dado">
-                    <span class="texto-secundario">Titular</span>
-                    <span id="titular">—</span>
-                </div>
-
-                <div class="dado">
-                    <span class="texto-secundario">CPF</span>
-                    <span id="cpf">—</span>
-                </div>
-
-                <div class="dado">
-                    <span class="texto-secundario">Tipo de conta</span>
-                    <span id="tipo">—</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- EXTRATO -->
-        <section id="tela-extrato" class="pagina" hidden>
-            <header class="pagina-header">
-                <div>
-                    <h1>Extrato</h1>
-                    <p class="texto-secundario">Histórico de movimentações</p>
-                </div>
-            </header>
-
-            <div class="card">
-                <ul id="lista-extrato" class="lista-extrato"></ul>
-            </div>
-        </section>
-
-        <!-- TRANSFERÊNCIA -->
-        <section id="tela-transferencia" class="pagina" hidden>
-            <header class="pagina-header">
-                <div>
-                    <h1>Transferência</h1>
-                    <p class="texto-secundario">Transfira valores entre contas</p>
-                </div>
-            </header>
-
-            <div class="card">
-                <form id="form-transferencia">
-                    <label for="destino-transferencia">CPF da conta de destino</label>
-                    <input id="destino-transferencia" type="text" placeholder="CPF do destinatário" required>
-
-                    <label for="valor-transferencia">Valor (R$)</label>
-                    <input id="valor-transferencia" type="number" min="0.01" step="0.01" placeholder="0,00" required>
-
-                    <button class="botao-principal" type="submit">Transferir</button>
-
-                    <p id="mensagem-transferencia" class="mensagem"></p>
-                </form>
-            </div>
-        </section>
-
-        <!-- ADMINISTRAÇÃO -->
-        <section id="tela-admin" class="pagina" hidden>
-            <header class="pagina-header">
-                <div>
-                    <h1>Administração</h1>
-                    <p class="texto-secundario">
-                        Gerencie as contas do banco
-                    </p>
-                </div>
-            </header>
-
-            <div class="card">
-                <h3>Buscar conta</h3>
-
-                <form id="form-buscar-admin" class="form-inline">
-                    <div>
-                        <label for="cpf-busca">CPF</label>
-                        <input id="cpf-busca" type="text" placeholder="000.000.000-00" required>
+    <!-- ====================================================================
+         1. TELA DE ACESSO (PORTAL BANCÁRIO)
+         ==================================================================== -->
+    <div id="tela-auth" class="auth-container">
+        <div class="auth-shell">
+            <section class="auth-showcase" aria-label="Apresentação do Sistema Banco">
+                <div class="auth-showcase-top">
+                    <div class="auth-logo">
+                        <span class="auth-logo-symbol"></span>
+                        <span>SISTEMA BANCO</span>
                     </div>
+                    <span class="auth-status">Acesso protegido</span>
+                </div>
+                <div class="auth-showcase-copy">
+                    <p class="eyebrow">Internet Banking</p>
+                    <h1>Seu dinheiro,<br><strong>no seu controle.</strong></h1>
+                    <p>Uma experiência simples para acompanhar sua conta e realizar suas operações com segurança.</p>
+                </div>
+                <div class="auth-building" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </section>
 
-                    <button class="botao-principal" type="submit">Buscar</button>
+            <section class="auth-card">
+                <div class="auth-header">
+                    <p class="eyebrow">Bem-vindo de volta</p>
+                    <h2>Entre na sua conta</h2>
+                    <p id="auth-subtitulo" class="auth-subtitulo">Acesso seguro ao Internet Banking</p>
+                </div>
+
+                <div class="auth-tabs" role="tablist" aria-label="Acesso ou cadastro">
+                    <button type="button" id="tab-login" class="auth-tab-btn ativo" role="tab">Acessar conta</button>
+                    <button type="button" id="tab-cadastro" class="auth-tab-btn" role="tab">Criar conta</button>
+                </div>
+
+                <form id="form-login">
+                <div class="form-grupo">
+                    <label for="login-usuario">CPF ou Usuário</label>
+                    <input type="text" id="login-usuario" placeholder="Digite seu CPF (11 dígitos) ou admin" required autocomplete="username">
+                </div>
+                <div class="form-grupo">
+                    <label for="login-senha">Senha de Acesso</label>
+                    <input type="password" id="login-senha" placeholder="Digite sua senha" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-submit-login">
+                    Entrar
+                </button>
                 </form>
 
-                <div id="resultado-busca" class="resultado-busca"></div>
-            </div>
-
-            <div class="card">
-                <div class="cabecalho-lista">
-                    <h3>Contas cadastradas</h3>
-
-                    <div class="paginacao">
-                        <button id="pagina-anterior" class="botao-paginacao" type="button">
-                            Anterior
-                        </button>
-
-                        <span id="pagina-atual" class="texto-secundario">Página 1</span>
-
-                        <button id="pagina-proxima" class="botao-paginacao" type="button">
-                            Próxima
-                        </button>
+                <form id="form-cadastro" style="display: none;">
+                <div class="form-grupo">
+                    <label for="cad-titular">Nome Completo</label>
+                    <input type="text" id="cad-titular" placeholder="Nome completo do titular" required maxlength="100">
+                </div>
+                <div class="form-row">
+                    <div class="form-grupo">
+                        <label for="cad-cpf">CPF</label>
+                        <input type="text" id="cad-cpf" placeholder="000.000.000-00" required maxlength="14">
+                    </div>
+                    <div class="form-grupo">
+                        <label for="cad-tipo">Tipo de Conta</label>
+                        <select id="cad-tipo" required>
+                            <option value="CORRENTE">Conta Corrente</option>
+                            <option value="POUPANCA">Conta Poupança</option>
+                            <option value="INVESTIMENTO">Conta Investimento</option>
+                        </select>
                     </div>
                 </div>
+                <div class="form-grupo">
+                    <label for="cad-email">E-mail</label>
+                    <input type="email" id="cad-email" placeholder="titular@empresa.com.br" required maxlength="100">
+                </div>
+                <div class="form-row">
+                    <div class="form-grupo">
+                        <label for="cad-cep">CEP</label>
+                        <input type="text" id="cad-cep" placeholder="00000-000" required maxlength="9">
+                        <div id="preview-cep" class="endereco-preview"></div>
+                    </div>
+                    <div class="form-grupo">
+                        <label for="cad-saldo">Aporte Inicial (R$)</label>
+                        <input type="number" id="cad-saldo" placeholder="0.00" step="0.01" min="0" value="100.00" required>
+                    </div>
+                </div>
+                <div class="form-grupo">
+                    <label for="cad-senha">Senha Numérica / Acesso (mínimo 8 dígitos)</label>
+                    <input type="password" id="cad-senha" placeholder="Mínimo 8 caracteres" required minlength="8" maxlength="64">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-submit-cadastro">
+                    Criar minha conta
+                </button>
+                </form>
+                <p class="auth-footnote">Seus dados são tratados com segurança e privacidade.</p>
+            </section>
+        </div>
+    </div>
 
-                <table class="tabela">
-                    <thead>
-                    <tr>
-                        <th>Titular</th>
-                        <th>CPF</th>
-                        <th>Tipo</th>
-                        <th>Saldo</th>
-                        <th>Ações</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tabela-contas"></tbody>
-                </table>
+    <!-- ====================================================================
+         2. INTERFACE BANCÁRIA PRINCIPAL
+         ==================================================================== -->
+    <div id="tela-app" class="app-layout" style="display: none;">
+        
+        <!-- SIDEBAR INSTITUCIONAL -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="auth-logo">
+                    <span class="auth-logo-symbol"></span>
+                    <span>Banco</span>
+                </div>
             </div>
 
-            <p id="mensagem-admin" class="mensagem"></p>
-        </section>
+            <nav class="sidebar-nav">
+                <div class="nav-separador">Serviços</div>
+                <button class="nav-item ativo" data-secao="secao-dashboard">
+                    <span class="nav-icon">⌂</span>
+                    <span>Visão Geral</span>
+                </button>
+                <button class="nav-item" data-secao="secao-extrato">
+                    <span class="nav-icon">▤</span>
+                    <span>Extrato de Conta</span>
+                </button>
+                <button class="nav-item" data-secao="secao-transferir">
+                    <span class="nav-icon">↔</span>
+                    <span>Transferência Pix</span>
+                </button>
+                <button class="nav-item" data-secao="secao-deposito">
+                    <span class="nav-icon">↓</span>
+                    <span>Depósito em Conta</span>
+                </button>
+                <button class="nav-item" data-secao="secao-saque">
+                    <span class="nav-icon">↑</span>
+                    <span>Saque em Conta</span>
+                </button>
 
-    </main>
-</div>
+                <!-- Menus de Gestão (Admin) -->
+                <div id="admin-nav-group" style="display: none;">
+                    <div class="nav-separador">Administração</div>
+                    <button class="nav-item" data-secao="secao-admin-contas">
+                        <span class="nav-icon">♙</span>
+                        <span>Gestão de Contas</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="btn-logout" class="btn btn-secondary btn-sm" style="width: 100%;">
+                    <span class="nav-icon">←</span>
+                    <span>Sair do Sistema</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="main-wrapper">
+            <!-- Barra Superior (Topbar) -->
+            <header class="topbar">
+                <div class="topbar-heading">
+                    <p class="eyebrow">Área do cliente</p>
+                    <h1 id="topbar-titulo" class="topbar-titulo">Visão Geral</h1>
+                </div>
+                <div class="topbar-user">
+                    <span class="topbar-bell" aria-hidden="true">♧</span>
+                    <span id="user-badge" class="badge-papel">CLIENTE</span>
+                    <span class="user-avatar" aria-hidden="true">KJ</span>
+                    <div class="user-info">
+                        <div id="user-nome" class="user-nome">Carregando...</div>
+                        <div id="user-detalhe" class="user-cpf">000.000.000-00</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Área Central -->
+            <main class="content-area">
+
+                <!-- SEÇÃO 1: PAINEL DA CONTA & AÇÕES RÁPIDAS (NÃO REPETE O EXTRATO) -->
+                <section id="secao-dashboard" class="secao-conteudo ativo">
+                    <div class="dashboard-hero">
+                        <p class="eyebrow">Resumo da sua conta</p>
+                        <h2>Olá, <span id="dashboard-nome">cliente</span>!</h2>
+                        <p>Acompanhe seu saldo e suas movimentações mais recentes.</p>
+                    </div>
+                    
+                    <div class="painel-conta-integrado">
+                        <div class="painel-coluna">
+                            <div class="painel-label">Saldo disponível</div>
+                            <div id="card-saldo" class="painel-valor">R$ 0,00</div>
+                            <div id="card-tipo-conta" class="painel-subtexto">Conta Corrente</div>
+                        </div>
+                        <div class="painel-coluna">
+                            <div class="painel-label">Conta</div>
+                            <div class="painel-value-small" id="card-cpf-titular">CPF: -</div>
+                            <div class="painel-subtexto">Chave Pix padrão do titular</div>
+                        </div>
+                        <div class="painel-coluna painel-detalhe-secundario" aria-hidden="true">
+                            <div class="painel-label">Endereço cadastrado</div>
+                            <div class="painel-value-small" id="card-endereco-rua">Carregando endereço...</div>
+                            <div class="painel-subtexto" id="card-endereco-cidade">-</div>
+                        </div>
+                    </div>
+
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Ações rápidas</p>
+                            <h2>O que você precisa fazer?</h2>
+                        </div>
+                    </div>
+                    <div class="grid-atalhos">
+                        <div class="card-atalho" id="atalho-pix">
+                            <span class="shortcut-icon">↔</span>
+                            <div class="card-atalho-titulo">Transferência Pix</div>
+                            <div class="card-atalho-desc">Envie dinheiro para outra conta.</div>
+                        </div>
+                        <div class="card-atalho" id="atalho-saque">
+                            <span class="shortcut-icon">↑</span>
+                            <div class="card-atalho-titulo">Efetuar saque</div>
+                            <div class="card-atalho-desc">Retire dinheiro do seu saldo.</div>
+                        </div>
+                        <div class="card-atalho" id="atalho-deposito">
+                            <span class="shortcut-icon">↓</span>
+                            <div class="card-atalho-titulo">Efetuar Depósito</div>
+                            <div class="card-atalho-desc">Adicione dinheiro à sua conta.</div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- SEÇÃO 2: EXTRATO COMPLETO DE CONTA -->
+                <section id="secao-extrato" class="secao-conteudo">
+                    <div class="painel-conta-integrado" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+                        <div class="painel-coluna">
+                            <div class="painel-label">Saldo em Conta</div>
+                            <div id="extrato-saldo-atual" class="painel-valor">R$ 0,00</div>
+                            <div class="painel-subtexto">Posição consolidada</div>
+                        </div>
+                        <div class="painel-coluna" style="display: flex; align-items: center; justify-content: flex-end;">
+                            <button id="btn-atualizar-extrato" class="btn btn-secondary btn-sm">
+                                Atualizar Lançamentos
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tabela-container">
+                        <div class="tabela-cabecalho">
+                            <h3>Histórico de Lançamentos em Conta</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data / Hora</th>
+                                    <th>Tipo de Lançamento</th>
+                                    <th>Detalhamento</th>
+                                    <th style="text-align: right;">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-extrato-completo">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 32px;">Carregando histórico...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 3: TRANSFERÊNCIA -->
+                <section id="secao-transferir" class="secao-conteudo">
+                    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); max-width: 500px; margin: 0 auto; padding: 28px;">
+                        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Ordem de Transferência Pix</h2>
+                        <p class="painel-subtexto" style="margin-bottom: 20px;">Envio direto de recursos entre contas bancárias.</p>
+
+                        <form id="form-transferir">
+                            <div class="form-grupo">
+                                <label for="transf-cpf-destino">CPF do Favorecido (apenas dígitos)</label>
+                                <input type="text" id="transf-cpf-destino" placeholder="000.000.000-00" required maxlength="14">
+                            </div>
+                            <div class="form-grupo">
+                                <label for="transf-valor">Valor a Transferir (R$)</label>
+                                <input type="number" id="transf-valor" placeholder="0.00" step="0.01" min="0.01" required>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary" id="btn-confirmar-transferencia">
+                                    Confirmar Envio
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 4: DEPÓSITO -->
+                <section id="secao-deposito" class="secao-conteudo">
+                    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); max-width: 500px; margin: 0 auto; padding: 28px;">
+                        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Efetuar Depósito</h2>
+                        <p class="painel-subtexto" style="margin-bottom: 20px;">Aporte de recursos na conta corrente ou investimento.</p>
+
+                        <form id="form-deposito">
+                            <div class="form-grupo">
+                                <label for="deposito-valor">Valor do Depósito (R$)</label>
+                                <input type="number" id="deposito-valor" placeholder="0.00" step="0.01" min="0.01" required>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary" id="btn-confirmar-deposito">
+                                    Confirmar Depósito
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 5: SAQUE -->
+                <section id="secao-saque" class="secao-conteudo">
+                    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); max-width: 500px; margin: 0 auto; padding: 28px;">
+                        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Efetuar Saque</h2>
+                        <p class="painel-subtexto" style="margin-bottom: 20px;">Retirada de fundos do saldo disponível da conta.</p>
+
+                        <form id="form-saque">
+                            <div class="form-grupo">
+                                <label for="saque-valor">Valor do Saque (R$)</label>
+                                <input type="number" id="saque-valor" placeholder="0.00" step="0.01" min="0.01" required>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary" id="btn-confirmar-saque">
+                                    Confirmar Saque
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 6: ADMINISTRAÇÃO -->
+                <section id="secao-admin-contas" class="secao-conteudo">
+                    <div class="tabela-container">
+                        <div class="tabela-cabecalho">
+                            <div>
+                                <h3>Carteira Geral de Contas (Ordenadas por Saldo)</h3>
+                                <p class="painel-subtexto">Controle corporativo e aplicação de tarifas</p>
+                            </div>
+                            <button id="btn-atualizar-admin" class="btn btn-secondary btn-sm">
+                                Atualizar Carteira
+                            </button>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Titular / Contato</th>
+                                    <th>CPF</th>
+                                    <th>Tipo de Conta</th>
+                                    <th>Praça / Estado</th>
+                                    <th style="text-align: right;">Saldo</th>
+                                    <th style="text-align: center;">Operações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-admin-contas">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">Carregando dados...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
 
 </body>
 </html>
