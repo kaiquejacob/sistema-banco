@@ -14,14 +14,14 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java%2025-0B0F14?style=for-the-badge&logo=openjdk&logoColor=FFFFFF)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot%204-0B0F14?style=for-the-badge&logo=springboot&logoColor=FFFFFF)
-![Spring Security](https://img.shields.io/badge/Spring%20Security-0B0F14?style=for-the-badge&logo=springsecurity&logoColor=FFFFFF)
-![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-0B0F14?style=for-the-badge&logo=spring&logoColor=FFFFFF)
-![MySQL](https://img.shields.io/badge/MySQL-0B0F14?style=for-the-badge&logo=mysql&logoColor=FFFFFF)
-![Docker](https://img.shields.io/badge/Docker-0B0F14?style=for-the-badge&logo=docker&logoColor=FFFFFF)
-![Prometheus](https://img.shields.io/badge/Prometheus-0B0F14?style=for-the-badge&logo=prometheus&logoColor=FFFFFF)
-![Grafana](https://img.shields.io/badge/Grafana-0B0F14?style=for-the-badge&logo=grafana&logoColor=FFFFFF)
+![Java](https://img.shields.io/badge/Java%2025-0B0F14?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot%204-0B0F14?style=for-the-badge)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-0B0F14?style=for-the-badge)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-0B0F14?style=for-the-badge)
+![MySQL](https://img.shields.io/badge/MySQL-0B0F14?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-0B0F14?style=for-the-badge)
+![Prometheus](https://img.shields.io/badge/Prometheus-0B0F14?style=for-the-badge)
+![Grafana](https://img.shields.io/badge/Grafana-0B0F14?style=for-the-badge)
 
 </div>
 
